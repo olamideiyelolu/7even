@@ -41,6 +41,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRefreshToken(data.refreshToken);
         setQuizIntroAccepted(false);
         setQuizStartModeState('fresh');
+
+        try {
+          const quizResult = await apiRequest<{
+            traits?: Record<string, number>;
+            valueSortTop?: string[];
+          }>('/quiz/result', undefined, data.accessToken);
+          const hasCompletedOnboarding =
+            Object.keys(quizResult?.traits ?? {}).length > 0 && (quizResult?.valueSortTop?.length ?? 0) === 10;
+          setOnboardingComplete(hasCompletedOnboarding);
+        } catch {
+          setOnboardingComplete(false);
+        }
       },
       async register(payload) {
         await apiRequest('/auth/register', {

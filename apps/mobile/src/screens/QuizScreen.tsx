@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
@@ -27,7 +27,6 @@ type ValueStepMode = 'choose' | 'rank';
 
 export function QuizScreen() {
   const { accessToken, markOnboardingComplete, quizStartMode, setQuizStartMode } = useAuth();
-  const [interests, setInterests] = useState('coffee,music');
   const [questions, setQuestions] = useState<QuizQuestionResponse[]>([]);
   const [valueCards, setValueCards] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +68,6 @@ export function QuizScreen() {
             setRankedValues(
               draft.rankedValues.filter((value) => payload.valueCards.includes(value)).slice(0, 10)
             );
-            setInterests((draft.interests ?? []).join(','));
           }
         }
       } catch (error) {
@@ -94,10 +92,7 @@ export function QuizScreen() {
             answers: questions
               .map((q) => ({ questionId: q.id, value: answers[q.id] }))
               .filter((answer) => typeof answer.value === 'number'),
-            interests: interests
-              .split(',')
-              .map((value) => value.trim())
-              .filter(Boolean),
+            interests: [],
             currentIndex: index,
             isValueStep,
             valueMode,
@@ -115,7 +110,6 @@ export function QuizScreen() {
     submitting,
     questions,
     answers,
-    interests,
     index,
     isValueStep,
     valueMode,
@@ -145,10 +139,7 @@ export function QuizScreen() {
           method: 'POST',
           body: JSON.stringify({
             answers: questions.map((q) => ({ questionId: q.id, value: answers[q.id] })),
-            interests: interests
-              .split(',')
-              .map((value) => value.trim())
-              .filter(Boolean),
+            interests: [],
             valueSortTop: rankedValues
           })
         },
@@ -263,9 +254,6 @@ export function QuizScreen() {
             })}
           </View>
 
-          <Text style={styles.helper}>Optional interests (comma-separated)</Text>
-          <TextInput style={styles.input} value={interests} onChangeText={setInterests} />
-
           <PrimaryButton
             label={valueMode === 'choose' ? 'Continue to ranking' : submitting ? 'Submitting...' : 'Submit onboarding'}
             onPress={() => {
@@ -325,13 +313,5 @@ const styles = StyleSheet.create({
   optionTextActive: {
     color: '#154734',
     fontWeight: '700'
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#FFFFFF'
   }
 });

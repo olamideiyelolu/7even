@@ -38,13 +38,25 @@ export class User {
   school!: string;
 
   @Prop({ required: true })
+  major!: string;
+
+  @Prop({ required: true })
+  schoolYear!: string;
+
+  @Prop({ required: true })
   gender!: string;
 
   @Prop({ required: true })
   orientation!: string;
 
   @Prop({ required: true })
+  pronouns!: string;
+
+  @Prop({ required: true })
   profilePhotoUrl!: string;
+
+  @Prop({ default: '' })
+  ctaLine!: string;
 
   @Prop({ type: [String], default: [] })
   interests!: string[];

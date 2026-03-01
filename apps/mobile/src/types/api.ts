@@ -3,9 +3,29 @@ export interface AuthResponse {
     id: string;
     email: string;
     fullName: string;
+    school?: string;
+    major?: string;
+    schoolYear?: string;
+    age?: number;
+    profilePhotoUrl?: string;
+    ctaLine?: string;
+    pronouns?: 'he/him' | 'she/her' | 'they/them' | 'other';
   };
   accessToken: string;
   refreshToken: string;
+}
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  school: string;
+  major?: string;
+  schoolYear?: string;
+  age: number;
+  profilePhotoUrl?: string;
+  ctaLine?: string;
+  pronouns?: 'he/him' | 'she/her' | 'they/them' | 'other';
 }
 
 export interface MatchResponse {

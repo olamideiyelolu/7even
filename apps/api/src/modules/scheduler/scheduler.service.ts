@@ -25,7 +25,7 @@ export class SchedulerService {
     private readonly matchModel: Model<MatchDocument>
   ) {}
 
-  @Cron('0 0 10 * * 0', {
+  @Cron('0 0 19 * * 0', {
     timeZone: 'America/Chicago'
   })
   async runSundayMatchingJob() {

@@ -1,14 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { API_ORIGIN } from '../config/network';
-import type { RootStackParamList } from '../../App';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
+import { MatchResponse } from '../types/api';
 
 interface ChatMessage {
   _id: string;
@@ -17,43 +14,57 @@ interface ChatMessage {
   createdAt: string;
 }
 
-export function ChatScreen({ route }: Props) {
+export function MessagesScreen() {
   const { accessToken } = useAuth();
+  const [matchId, setMatchId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
 
+  useEffect(() => {
+    if (!accessToken) return;
+    void apiRequest<MatchResponse | null>('/matches/current', undefined, accessToken).then((match) => {
+      setMatchId(match?._id ?? null);
+    });
+  }, [accessToken]);
+
   const socket = useMemo(() => {
-    if (!accessToken) return null;
+    if (!accessToken || !matchId) return null;
     return io(API_ORIGIN, {
       transports: ['websocket'],
       auth: { token: accessToken }
     });
-  }, [accessToken]);
+  }, [accessToken, matchId]);
 
   useEffect(() => {
-    if (!socket || !accessToken) return;
+    if (!socket || !accessToken || !matchId) return;
 
-    socket.emit('chat:join', { matchId: route.params.matchId });
+    socket.emit('chat:join', { matchId });
     socket.on('chat:new', (message: ChatMessage) => {
       setMessages((prev) => [message, ...prev]);
     });
 
-    void apiRequest<{ items: ChatMessage[] }>(
-      `/matches/${route.params.matchId}/messages`,
-      undefined,
-      accessToken
-    ).then((res) => setMessages(res.items));
+    void apiRequest<{ items: ChatMessage[] }>(`/matches/${matchId}/messages`, undefined, accessToken).then((res) =>
+      setMessages(res.items)
+    );
 
     return () => {
       socket.disconnect();
     };
-  }, [socket, route.params.matchId, accessToken]);
+  }, [socket, matchId, accessToken]);
 
   const send = () => {
-    if (!socket || !text.trim()) return;
-    socket.emit('chat:send', { matchId: route.params.matchId, text });
+    if (!socket || !matchId || !text.trim()) return;
+    socket.emit('chat:send', { matchId, text });
     setText('');
   };
+
+  if (!matchId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.empty}>No active match yet. Messages will appear once you are matched.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -68,12 +79,7 @@ export function ChatScreen({ route }: Props) {
           </View>
         )}
       />
-      <TextInput
-        style={styles.input}
-        value={text}
-        onChangeText={setText}
-        placeholder="Send a message"
-      />
+      <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="Send a message" />
       <PrimaryButton label="Send" onPress={send} />
     </View>
   );
@@ -81,6 +87,7 @@ export function ChatScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F6F4EE', padding: 12 },
+  empty: { color: '#4A4A4A', marginTop: 20 },
   messageBubble: {
     backgroundColor: '#FFFFFF',
     padding: 10,

@@ -24,6 +24,14 @@ interface OtpEntry {
   expiresAt: Date;
 }
 
+const SCHOOL_BY_EMAIL_DOMAIN: Array<{ school: string; domains: string[] }> = [
+  { school: 'DePaul University', domains: ['depaul.edu'] },
+  { school: 'University of Illinois Chicago', domains: ['uic.edu'] },
+  { school: 'Roosevelt University', domains: ['roosevelt.edu'] },
+  { school: 'Columbia College Chicago', domains: ['colum.edu', 'columbiachicago.edu'] },
+  { school: 'Harold Washington College', domains: ['haroldwashington.edu', 'hwc.ccc.edu'] }
+];
+
 @Injectable()
 export class AuthService {
   // OTP storage is intentionally disabled for MVP local flow.
@@ -38,8 +46,11 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    if (!dto.email.endsWith('.edu')) {
-      throw new BadRequestException('Only .edu emails are allowed.');
+    const school = this.resolveSchoolFromEmail(dto.email);
+    if (!school) {
+      throw new BadRequestException(
+        'Email domain is not supported. Allowed schools: DePaul University, University of Illinois Chicago, Roosevelt University, Columbia College Chicago, Harold Washington College.'
+      );
     }
 
     const existing = await this.usersService.findByEmail(dto.email);
@@ -48,7 +59,13 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(dto.password);
-    const user = await this.usersService.createFromRegistration(dto, passwordHash);
+    const user = await this.usersService.createFromRegistration(
+      {
+        ...dto,
+        school
+      },
+      passwordHash
+    );
     await this.usersService.markEmailVerified(dto.email.toLowerCase());
 
     return {
@@ -57,6 +74,20 @@ export class AuthService {
       otpPreview: null,
       message: 'Registered. OTP verification is currently bypassed in local MVP.'
     };
+  }
+
+  private resolveSchoolFromEmail(email: string) {
+    const domain = email.toLowerCase().split('@')[1]?.trim();
+    if (!domain) return null;
+
+    for (const entry of SCHOOL_BY_EMAIL_DOMAIN) {
+      if (
+        entry.domains.some((allowedDomain) => domain === allowedDomain || domain.endsWith(`.${allowedDomain}`))
+      ) {
+        return entry.school;
+      }
+    }
+    return null;
   }
 
   async verifyEmail(dto: VerifyEmailDto) {

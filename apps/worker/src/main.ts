@@ -8,7 +8,7 @@ import { Cron } from '@nestjs/schedule';
 class WorkerScheduler {
   constructor(private readonly config: ConfigService) {}
 
-  @Cron('0 10 * * 0', { timeZone: 'America/Chicago' })
+  @Cron('0 19 * * 0', { timeZone: 'America/Chicago' })
   async triggerWeeklyMatch() {
     const baseUrl = this.config.get<string>('API_BASE_URL', 'http://localhost:4000/api');
     const token = this.config.get<string>('WORKER_AUTH_TOKEN', '');

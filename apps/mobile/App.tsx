@@ -7,16 +7,14 @@ import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { QuizIntroScreen } from './src/screens/QuizIntroScreen';
 import { QuizScreen } from './src/screens/QuizScreen';
-import { MatchScreen } from './src/screens/MatchScreen';
-import { ChatScreen } from './src/screens/ChatScreen';
+import { MainTabsScreen } from './src/screens/MainTabsScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   QuizIntro: undefined;
   Quiz: undefined;
-  Match: undefined;
-  Chat: { matchId: string };
+  MainTabs: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,10 +34,7 @@ function AppNavigator() {
       ) : !onboardingComplete ? (
         <Stack.Screen name="Quiz" component={QuizScreen} />
       ) : (
-        <>
-          <Stack.Screen name="Match" component={MatchScreen} />
-          <Stack.Screen name="Chat" component={ChatScreen} />
-        </>
+        <Stack.Screen name="MainTabs" component={MainTabsScreen} options={{ headerShown: false }} />
       )}
     </Stack.Navigator>
   );

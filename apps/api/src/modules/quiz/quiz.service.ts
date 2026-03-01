@@ -5,7 +5,9 @@ import {
   BIG_FIVE_QUESTIONS,
   BIG_FIVE_QUESTIONS_PER_TRAIT,
   BIG_FIVE_TRAITS,
+  MORAL_QUESTIONS_PER_TRAIT,
   MORAL_QUESTIONS,
+  MORAL_TRAITS,
   QUIZ_QUESTIONS,
   VALUE_CARDS_50
 } from '../../common/constants/quiz.constants';
@@ -43,7 +45,14 @@ export class QuizService {
         .slice(0, BIG_FIVE_QUESTIONS_PER_TRAIT);
     });
 
-    const questions = [...seededBigFive, ...MORAL_QUESTIONS];
+    const seededMoral = MORAL_TRAITS.flatMap((trait) => {
+      return MORAL_QUESTIONS
+        .filter((q) => q.axis === trait)
+        .sort((a, b) => this.stableHash(`${userId}:${a.id}`) - this.stableHash(`${userId}:${b.id}`))
+        .slice(0, MORAL_QUESTIONS_PER_TRAIT);
+    });
+
+    const questions = [...seededBigFive, ...seededMoral];
     return {
       questions,
       valueCards: VALUE_CARDS_50

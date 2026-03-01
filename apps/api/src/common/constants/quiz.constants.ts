@@ -95,7 +95,18 @@ export const BIG_FIVE_TRAITS = [
   'neuroticism'
 ] as const;
 
-export const BIG_FIVE_QUESTIONS_PER_TRAIT = 8;
+export const BIG_FIVE_QUESTIONS_PER_TRAIT = 7;
+
+export const MORAL_TRAITS = [
+  'care',
+  'fairness',
+  'liberty',
+  'loyalty',
+  'authority',
+  'sanctity'
+] as const;
+
+export const MORAL_QUESTIONS_PER_TRAIT = 5;
 
 export const VALUE_CARDS_50 = [
   'Compassion',

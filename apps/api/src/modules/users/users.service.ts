@@ -12,7 +12,7 @@ export class UsersService {
     private readonly userModel: Model<UserDocument>
   ) {}
 
-  async createFromRegistration(dto: RegisterDto, passwordHash: string) {
+  async createFromRegistration(dto: RegisterDto & { school: string }, passwordHash: string) {
     return this.userModel.create({
       email: dto.email.toLowerCase(),
       passwordHash,
@@ -20,9 +20,13 @@ export class UsersService {
       age: dto.age,
       dateOfBirth: new Date(dto.dateOfBirth),
       school: dto.school,
+      major: dto.major,
+      schoolYear: dto.schoolYear,
       gender: dto.gender,
       orientation: dto.orientation,
+      pronouns: dto.pronouns,
       profilePhotoUrl: dto.profilePhotoUrl,
+      ctaLine: dto.ctaLine ?? '',
       interests: dto.interests ?? [],
       preferences: {
         preferredGenders: dto.preferredGenders,
@@ -62,7 +66,12 @@ export class UsersService {
     const update: Record<string, unknown> = {};
     if (dto.fullName) update.fullName = dto.fullName;
     if (dto.school) update.school = dto.school;
+    if (dto.major) update.major = dto.major;
+    if (dto.schoolYear) update.schoolYear = dto.schoolYear;
+    if (typeof dto.age === 'number') update.age = dto.age;
     if (dto.profilePhotoUrl) update.profilePhotoUrl = dto.profilePhotoUrl;
+    if (typeof dto.ctaLine === 'string') update.ctaLine = dto.ctaLine;
+    if (typeof dto.pronouns === 'string') update.pronouns = dto.pronouns;
     if (dto.interests) update.interests = dto.interests;
     if (dto.preferredGenders) {
       update['preferences.preferredGenders'] = dto.preferredGenders;
@@ -129,10 +138,14 @@ export class UsersService {
       fullName: user.fullName,
       age: user.age,
       school: user.school,
+      major: user.major,
+      schoolYear: user.schoolYear,
       gender: user.gender,
       orientation: user.orientation,
+      pronouns: user.pronouns,
       interests: user.interests,
       profilePhotoUrl: user.profilePhotoUrl,
+      ctaLine: user.ctaLine,
       preferences: user.preferences,
       emailVerifiedAt: user.emailVerifiedAt,
       active: user.active,

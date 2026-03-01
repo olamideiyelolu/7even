@@ -14,6 +14,9 @@ import {
 
 const ORIENTATIONS = ['straight', 'gay', 'lesbian', 'bisexual', 'pansexual', 'queer', 'asexual', 'other'] as const;
 const GENDERS = ['man', 'woman', 'non_binary', 'other'] as const;
+const SCHOOL_YEARS = ['freshman', 'sophomore', 'junior', 'senior', 'graduate'] as const;
+const CTA_LINES = ['Red Line', 'Brown Line', 'Purple Line', 'Green Line', 'Blue Line', 'Orange Line', 'Metra', 'Bus', 'I Drive'] as const;
+const PRONOUNS = ['he/him', 'she/her', 'they/them', 'other'] as const;
 
 export class RegisterDto {
   @IsEmail()
@@ -34,8 +37,16 @@ export class RegisterDto {
   @IsDateString()
   dateOfBirth!: string;
 
+  @IsOptional()
   @IsString()
   school!: string;
+
+  @IsString()
+  major!: string;
+
+  @IsString()
+  @IsIn(SCHOOL_YEARS)
+  schoolYear!: (typeof SCHOOL_YEARS)[number];
 
   @IsString()
   @IsIn(GENDERS)
@@ -46,7 +57,16 @@ export class RegisterDto {
   orientation!: (typeof ORIENTATIONS)[number];
 
   @IsString()
+  @IsIn(PRONOUNS)
+  pronouns!: (typeof PRONOUNS)[number];
+
+  @IsString()
   profilePhotoUrl!: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(CTA_LINES)
+  ctaLine?: (typeof CTA_LINES)[number];
 
   @IsArray()
   @ArrayMinSize(1)

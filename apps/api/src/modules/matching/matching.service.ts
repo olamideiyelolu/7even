@@ -101,7 +101,7 @@ export class MatchingService {
     const runTime = dayjs(referenceDate).tz(this.timezone());
     const nextSunday = runTime.add(1, 'week').day(0);
     const expiresAt = nextSunday
-      .hour(9)
+      .hour(18)
       .minute(59)
       .second(59)
       .millisecond(0)

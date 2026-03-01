@@ -19,6 +19,11 @@ export class MatchingController {
     return this.matchingService.getCurrentMatch(user.sub);
   }
 
+  @Get('current/partner-profile')
+  getCurrentPartnerProfile(@CurrentUser() user: AuthUser) {
+    return this.matchingService.getCurrentPartnerProfile(user.sub);
+  }
+
   @Get('history')
   getHistory(@CurrentUser() user: AuthUser) {
     return this.matchingService.getMatchHistory(user.sub);

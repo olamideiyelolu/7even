@@ -18,6 +18,7 @@ interface ChatMessage {
 export function MessagesScreen() {
   const { accessToken } = useAuth();
   const [matchId, setMatchId] = useState<string | null>(null);
+  const [matchName, setMatchName] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
 
@@ -25,6 +26,7 @@ export function MessagesScreen() {
     if (!accessToken) return;
     void apiRequest<MatchResponse | null>('/matches/current', undefined, accessToken).then((match) => {
       setMatchId(match?._id ?? null);
+      setMatchName(match?.matchedWith?.fullName ?? '');
     });
   }, [accessToken]);
 
@@ -71,6 +73,7 @@ export function MessagesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topRule} />
+      <Text style={styles.headerTitle}>{matchName || 'Messages'}</Text>
       <FlatList
         data={messages}
         inverted
@@ -111,6 +114,12 @@ const styles = StyleSheet.create({
     color: ui.color.textSecondary,
     marginTop: ui.spacing.lg,
     fontSize: ui.type.body
+  },
+  headerTitle: {
+    color: ui.color.accent,
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: ui.spacing.sm
   },
   listContent: {
     paddingBottom: ui.spacing.sm

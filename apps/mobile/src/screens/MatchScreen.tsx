@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
@@ -9,21 +9,21 @@ import { ui } from '../theme/ui';
 interface Props {
   onProfilePress?: () => void;
   onMessagesPress?: () => void;
+  onMatchProfilePress?: () => void;
 }
 
-export function MatchScreen({ onProfilePress, onMessagesPress }: Props) {
+export function MatchScreen({ onProfilePress, onMessagesPress, onMatchProfilePress }: Props) {
   const { accessToken, logout } = useAuth();
   const [match, setMatch] = useState<MatchResponse | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [nowMs, setNowMs] = useState(Date.now());
 
   const load = useCallback(async () => {
     if (!accessToken) return;
-    setRefreshing(true);
     try {
       const current = await apiRequest<MatchResponse | null>('/matches/current', undefined, accessToken);
       setMatch(current);
-    } finally {
-      setRefreshing(false);
+    } catch {
+      setMatch(null);
     }
   }, [accessToken]);
 
@@ -31,89 +31,123 @@ export function MatchScreen({ onProfilePress, onMessagesPress }: Props) {
     void load();
   }, [load]);
 
-  const daysLeft = useMemo(() => {
-    if (!match?.expiresAt) return 7;
-    const ms = new Date(match.expiresAt).getTime() - Date.now();
-    return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
-  }, [match]);
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const sundayCountdown = useMemo(() => {
+    if (match) return null;
+
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZoneName: 'shortOffset'
+    });
+
+    const parts = formatter.formatToParts(new Date(nowMs));
+    const get = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((p) => p.type === type)?.value ?? '';
+
+    if (get('weekday') !== 'Sun') return null;
+
+    const hour = Number(get('hour') || '0');
+    const minute = Number(get('minute') || '0');
+    const second = Number(get('second') || '0');
+    const secondsSinceMidnight = hour * 3600 + minute * 60 + second;
+    if (secondsSinceMidnight >= 19 * 3600) return null;
+
+    const tzName = get('timeZoneName');
+    const offsetMatch = tzName.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/i);
+    if (!offsetMatch) return null;
+    const rawHours = Number(offsetMatch[1]);
+    const rawMinutes = Number(offsetMatch[2] ?? '0');
+    const sign = rawHours >= 0 ? '+' : '-';
+    const absHours = Math.abs(rawHours).toString().padStart(2, '0');
+    const absMinutes = Math.abs(rawMinutes).toString().padStart(2, '0');
+    const offset = `${sign}${absHours}:${absMinutes}`;
+
+    const releaseMs = Date.parse(`${get('year')}-${get('month')}-${get('day')}T19:00:00${offset}`);
+    const remainingSeconds = Math.max(0, Math.floor((releaseMs - nowMs) / 1000));
+
+    return {
+      h: Math.floor(remainingSeconds / 3600),
+      m: Math.floor((remainingSeconds % 3600) / 60),
+      s: remainingSeconds % 60
+    };
+  }, [match, nowMs]);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.topRule} />
 
       <View style={styles.header}>
-        <Text style={styles.logo}>7even</Text>
         {!!onProfilePress && (
-          <Pressable onPress={onProfilePress}>
+          <Pressable style={styles.profileButton} onPress={onProfilePress}>
             <Text style={styles.link}>PROFILE</Text>
           </Pressable>
         )}
+        <Text style={styles.logo}>7even</Text>
       </View>
 
-      <View style={styles.countdownWrap}>
-        <View style={styles.countdownCircle}>
-          <Text style={styles.countdownNumber}>{daysLeft}</Text>
-          <Text style={styles.countdownLabel}>DAYS LEFT</Text>
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={ui.color.accent} />}
-      >
+      <View style={styles.content}>
         <View style={styles.statusCard}>
-          <Text style={styles.statusIcon}>{match ? '❤️' : '🔎'}</Text>
-          <Text style={styles.statusTitle}>{match ? 'MATCH READY' : 'SEARCHING FOR YOUR MATCH'}</Text>
-          <Text style={styles.statusBody}>
-            {match
-              ? `You are matched with ${match.matchedWith?.fullName ?? 'someone'}. Expires ${new Date(
-                  match.expiresAt
-                ).toLocaleString()}.`
-              : 'Our algorithm is finding someone who shares your Core 7. Check back soon.'}
-          </Text>
-
-          {!!match && (
-            <Pressable style={styles.primaryAction} onPress={onMessagesPress}>
-              <Text style={styles.primaryActionText}>OPEN CHAT</Text>
-            </Pressable>
-          )}
-
-          {!!match?.matchedWith && (
-            <View style={styles.matchCard}>
-              {!!match.matchedWith.profilePhotoUrl ? (
-                <Image source={{ uri: match.matchedWith.profilePhotoUrl }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarInitial}>
-                    {match.matchedWith.fullName?.trim().charAt(0).toUpperCase() || '?'}
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.matchName}>{match.matchedWith.fullName}</Text>
-              {!!match.matchedWith.school && (
-                <Text style={styles.matchMeta}>{match.matchedWith.school}</Text>
-              )}
-              {!!match.matchedWith.major && (
-                <Text style={styles.matchMeta}>{match.matchedWith.major}</Text>
-              )}
-            </View>
-          )}
-
-          {!!match && (
-            <View style={styles.suggestionSection}>
-              <Text style={styles.suggestionTitle}>DATE IDEA</Text>
-              <View style={styles.suggestionRow}>
-                <Text style={styles.suggestionName}>Date suggestion coming soon</Text>
-                <Text style={styles.suggestionMeta}>Template placeholder</Text>
+          {!!match?.matchedWith ? (
+            <>
+              <Text style={styles.statusTitle}>YOUR MATCH</Text>
+              <Pressable style={styles.matchCard} onPress={onMatchProfilePress}>
+                {!!match.matchedWith.profilePhotoUrl ? (
+                  <Image source={{ uri: match.matchedWith.profilePhotoUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarInitial}>
+                      {match.matchedWith.fullName?.trim().charAt(0).toUpperCase() || '?'}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.matchName}>{match.matchedWith.fullName}</Text>
+                {!!match.matchedWith.school && (
+                  <Text style={styles.matchMeta}>{match.matchedWith.school}</Text>
+                )}
+                <Text style={styles.matchHint}>Tap to view profile</Text>
+              </Pressable>
+              <Pressable style={styles.primaryAction} onPress={onMessagesPress}>
+                <Text style={styles.primaryActionText}>OPEN CHAT</Text>
+              </Pressable>
+            </>
+          ) : sundayCountdown ? (
+            <>
+              <Text style={styles.statusIcon}>⏳</Text>
+              <Text style={styles.statusTitle}>MATCHES RELEASE SUNDAY 7:00 PM CT</Text>
+              <View style={styles.countdownCircle}>
+                <Text style={styles.countdownNumber}>
+                  {`${sundayCountdown.h.toString().padStart(2, '0')}:${sundayCountdown.m
+                    .toString()
+                    .padStart(2, '0')}:${sundayCountdown.s.toString().padStart(2, '0')}`}
+                </Text>
+                <Text style={styles.countdownLabel}>TIME REMAINING</Text>
               </View>
-            </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.statusIcon}>🔎</Text>
+              <Text style={styles.statusTitle}>NO ACTIVE MATCH</Text>
+              <Text style={styles.statusBody}>Check back Sunday for your next match.</Text>
+            </>
           )}
         </View>
 
         <Pressable onPress={logout}>
           <Text style={styles.logoutText}>LOG OUT</Text>
         </Pressable>
-      </ScrollView>
+      </View>
 
     </SafeAreaView>
   );
@@ -130,8 +164,16 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 20,
-    marginBottom: 4
+    marginBottom: 4,
+    minHeight: 72,
+    position: 'relative'
+  },
+  profileButton: {
+    position: 'absolute',
+    right: 18,
+    top: 0
   },
   logo: {
     color: ui.color.textPrimary,
@@ -143,11 +185,6 @@ const styles = StyleSheet.create({
     color: ui.color.accent,
     letterSpacing: 2,
     fontWeight: '700'
-  },
-  countdownWrap: {
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 14
   },
   countdownCircle: {
     width: 190,
@@ -162,8 +199,8 @@ const styles = StyleSheet.create({
   },
   countdownNumber: {
     color: ui.color.primary,
-    fontSize: 88,
-    lineHeight: 88,
+    fontSize: 40,
+    lineHeight: 44,
     fontWeight: '700'
   },
   countdownLabel: {
@@ -173,9 +210,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800'
   },
-  scrollContent: {
+  content: {
+    flex: 1,
+    justifyContent: 'center',
     paddingHorizontal: 18,
-    paddingBottom: 10,
+    paddingBottom: 12,
     gap: 18
   },
   statusCard: {
@@ -183,7 +222,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ui.color.border,
     backgroundColor: ui.color.surface,
-    paddingVertical: 30,
+    paddingVertical: 26,
     paddingHorizontal: ui.spacing.lg,
     alignItems: 'center',
     ...ui.shadow.soft
@@ -221,14 +260,6 @@ const styles = StyleSheet.create({
     fontSize: ui.button.textSize,
     letterSpacing: ui.button.letterSpacing,
     fontWeight: '800'
-  },
-  suggestionSection: {
-    marginTop: 20,
-    width: '100%',
-    borderTopWidth: 1,
-    borderTopColor: ui.color.border,
-    paddingTop: 14,
-    gap: 10
   },
   matchCard: {
     marginTop: 18,
@@ -276,28 +307,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center'
   },
-  suggestionTitle: {
+  matchHint: {
     color: ui.color.accent,
-    fontSize: 13,
-    letterSpacing: 2.2,
-    fontWeight: '800'
-  },
-  suggestionRow: {
-    borderRadius: ui.radius.md,
-    borderWidth: 1,
-    borderColor: ui.color.border,
-    backgroundColor: ui.color.card,
-    padding: 10
-  },
-  suggestionName: {
-    color: ui.color.accent,
-    fontSize: 14,
+    fontSize: 12,
+    marginTop: 6,
     fontWeight: '700'
-  },
-  suggestionMeta: {
-    marginTop: 2,
-    color: '#8C8578',
-    fontSize: 13
   },
   logoutText: {
     textAlign: 'center',

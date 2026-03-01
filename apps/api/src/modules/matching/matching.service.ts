@@ -197,6 +197,27 @@ export class MatchingService {
     };
   }
 
+  async getCurrentPartnerProfile(userId: string) {
+    const current = await this.getCurrentMatch(userId);
+    const matchedWithId = current?.matchedWith?.id;
+    if (!matchedWithId) return null;
+
+    const user = await this.usersService.findById(matchedWithId);
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      school: user.school,
+      major: user.major,
+      schoolYear: user.schoolYear,
+      age: user.age,
+      pronouns: user.pronouns,
+      ctaLine: user.ctaLine,
+      profilePhotoUrl: user.profilePhotoUrl
+    };
+  }
+
   async getMatchHistory(userId: string) {
     return this.matchModel
       .find({

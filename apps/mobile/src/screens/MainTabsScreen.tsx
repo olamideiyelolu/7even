@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MatchScreen } from './MatchScreen';
 import { MessagesScreen } from './MessagesScreen';
 import { ProfileScreen } from './ProfileScreen';
+import { PartnerProfileScreen } from './PartnerProfileScreen';
 import { ui } from '../theme/ui';
 
 type TabKey = 'home' | 'messages';
@@ -10,19 +11,29 @@ type TabKey = 'home' | 'messages';
 export function MainTabsScreen() {
   const [tab, setTab] = useState<TabKey>('home');
   const [showProfile, setShowProfile] = useState(false);
+  const [showPartnerProfile, setShowPartnerProfile] = useState(false);
 
   const content = useMemo(() => {
     if (showProfile) {
       return <ProfileScreen onBack={() => setShowProfile(false)} />;
     }
+    if (showPartnerProfile) {
+      return <PartnerProfileScreen onBack={() => setShowPartnerProfile(false)} />;
+    }
     if (tab === 'messages') return <MessagesScreen />;
-    return <MatchScreen onProfilePress={() => setShowProfile(true)} onMessagesPress={() => setTab('messages')} />;
-  }, [tab, showProfile]);
+    return (
+      <MatchScreen
+        onProfilePress={() => setShowProfile(true)}
+        onMessagesPress={() => setTab('messages')}
+        onMatchProfilePress={() => setShowPartnerProfile(true)}
+      />
+    );
+  }, [tab, showProfile, showPartnerProfile]);
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>{content}</View>
-      {!showProfile ? (
+      {!showProfile && !showPartnerProfile ? (
         <View style={styles.tabBar}>
           <Pressable style={styles.tab} onPress={() => setTab('home')}>
             <Text style={[styles.tabText, tab === 'home' && styles.tabTextActive]}>HOME</Text>

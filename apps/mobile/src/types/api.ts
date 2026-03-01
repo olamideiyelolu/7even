@@ -51,6 +51,18 @@ export interface MatchResponse {
   };
 }
 
+export interface PartnerProfileResponse {
+  id: string;
+  fullName: string;
+  school?: string;
+  major?: string;
+  schoolYear?: string;
+  age?: number;
+  pronouns?: string;
+  ctaLine?: string;
+  profilePhotoUrl?: string;
+}
+
 export interface QuizQuestionResponse {
   id: string;
   prompt: string;

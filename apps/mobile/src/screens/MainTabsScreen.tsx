@@ -20,7 +20,9 @@ export function MainTabsScreen() {
     if (showPartnerProfile) {
       return <PartnerProfileScreen onBack={() => setShowPartnerProfile(false)} />;
     }
-    if (tab === 'messages') return <MessagesScreen />;
+    if (tab === 'messages') {
+      return <MessagesScreen onMatchProfilePress={() => setShowPartnerProfile(true)} />;
+    }
     return (
       <MatchScreen
         onProfilePress={() => setShowProfile(true)}

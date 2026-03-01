@@ -41,15 +41,16 @@ export function PartnerProfileScreen({ onBack }: Props) {
       <View style={styles.topRule} />
       <PrimaryButton label="Back" variant="secondary" onPress={onBack} />
 
-      <Text style={styles.title}>{profile?.fullName ?? 'Match Profile'}</Text>
-
-      {profile?.profilePhotoUrl ? (
-        <Image source={{ uri: profile.profilePhotoUrl }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, styles.avatarFallback]}>
-          <Text style={styles.avatarFallbackText}>No Photo</Text>
-        </View>
-      )}
+      <View style={styles.profileHeader}>
+        <Text style={styles.title}>{profile?.fullName ?? 'Match Profile'}</Text>
+        {profile?.profilePhotoUrl ? (
+          <Image source={{ uri: profile.profilePhotoUrl }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarFallbackText}>No Photo</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.row}>Name: {profile?.fullName ?? 'Not set'}</Text>
@@ -81,7 +82,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: ui.spacing.md,
     marginBottom: ui.spacing.md,
-    color: ui.color.textPrimary
+    color: ui.color.textPrimary,
+    textAlign: 'center'
+  },
+  profileHeader: {
+    alignItems: 'center'
   },
   avatar: {
     width: 112,

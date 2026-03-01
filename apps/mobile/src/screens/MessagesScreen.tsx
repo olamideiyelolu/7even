@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { io } from 'socket.io-client';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { API_ORIGIN } from '../config/network';
-import { MatchResponse } from '../types/api';
+import { MatchResponse, MeResponse } from '../types/api';
 import { ui } from '../theme/ui';
 
 interface ChatMessage {
@@ -15,18 +15,29 @@ interface ChatMessage {
   createdAt: string;
 }
 
-export function MessagesScreen() {
+interface Props {
+  onMatchProfilePress?: () => void;
+}
+
+export function MessagesScreen({ onMatchProfilePress }: Props) {
   const { accessToken } = useAuth();
+  const [meId, setMeId] = useState<string | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [matchName, setMatchName] = useState('');
+  const [matchPhotoUrl, setMatchPhotoUrl] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
 
   useEffect(() => {
     if (!accessToken) return;
+    void apiRequest<MeResponse>('/me', undefined, accessToken)
+      .then((me) => setMeId(me.id))
+      .catch(() => setMeId(null));
+
     void apiRequest<MatchResponse | null>('/matches/current', undefined, accessToken).then((match) => {
       setMatchId(match?._id ?? null);
       setMatchName(match?.matchedWith?.fullName ?? '');
+      setMatchPhotoUrl(match?.matchedWith?.profilePhotoUrl ?? '');
     });
   }, [accessToken]);
 
@@ -73,7 +84,16 @@ export function MessagesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topRule} />
-      <Text style={styles.headerTitle}>{matchName || 'Messages'}</Text>
+      <Pressable style={styles.headerRow} onPress={onMatchProfilePress} disabled={!onMatchProfilePress}>
+        {matchPhotoUrl ? (
+          <Image source={{ uri: matchPhotoUrl }} style={styles.headerAvatar} />
+        ) : (
+          <View style={[styles.headerAvatar, styles.headerAvatarFallback]}>
+            <Text style={styles.headerAvatarInitial}>{(matchName || 'M').charAt(0).toUpperCase()}</Text>
+          </View>
+        )}
+        <Text style={styles.headerTitle}>{matchName || 'Messages'}</Text>
+      </Pressable>
       <FlatList
         data={messages}
         inverted
@@ -81,8 +101,13 @@ export function MessagesScreen() {
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.messageBubble}>
+            <Text style={styles.senderName}>
+              {item.senderId === meId ? 'You' : matchName || 'Match'}
+            </Text>
             <Text style={styles.messageText}>{item.body}</Text>
-            <Text style={styles.time}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+            <Text style={styles.time}>
+              {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            </Text>
           </View>
         )}
       />
@@ -119,7 +144,31 @@ const styles = StyleSheet.create({
     color: ui.color.accent,
     fontSize: 24,
     fontWeight: '800',
+    textAlign: 'center'
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
     marginBottom: ui.spacing.md
+  },
+  headerAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: ui.color.border
+  },
+  headerAvatarFallback: {
+    backgroundColor: ui.color.surface,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  headerAvatarInitial: {
+    color: ui.color.accent,
+    fontSize: 13,
+    fontWeight: '800'
   },
   listContent: {
     paddingBottom: ui.spacing.sm,
@@ -139,6 +188,12 @@ const styles = StyleSheet.create({
     color: ui.color.textPrimary,
     fontSize: 15,
     lineHeight: 20
+  },
+  senderName: {
+    color: ui.color.accent,
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4
   },
   time: {
     fontSize: 11,

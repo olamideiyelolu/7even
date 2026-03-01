@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { io } from 'socket.io-client';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { API_ORIGIN } from '../config/network';
-import { MatchResponse } from '../types/api';
+import { MatchResponse, MeResponse } from '../types/api';
 import { ui } from '../theme/ui';
 
 interface ChatMessage {
@@ -15,18 +15,29 @@ interface ChatMessage {
   createdAt: string;
 }
 
-export function MessagesScreen() {
+interface Props {
+  onMatchProfilePress?: () => void;
+}
+
+export function MessagesScreen({ onMatchProfilePress }: Props) {
   const { accessToken } = useAuth();
+  const [meId, setMeId] = useState<string | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [matchName, setMatchName] = useState('');
+  const [matchPhotoUrl, setMatchPhotoUrl] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
 
   useEffect(() => {
     if (!accessToken) return;
+    void apiRequest<MeResponse>('/me', undefined, accessToken)
+      .then((me) => setMeId(me.id))
+      .catch(() => setMeId(null));
+
     void apiRequest<MatchResponse | null>('/matches/current', undefined, accessToken).then((match) => {
       setMatchId(match?._id ?? null);
       setMatchName(match?.matchedWith?.fullName ?? '');
+      setMatchPhotoUrl(match?.matchedWith?.profilePhotoUrl ?? '');
     });
   }, [accessToken]);
 
@@ -73,7 +84,16 @@ export function MessagesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topRule} />
-      <Text style={styles.headerTitle}>{matchName || 'Messages'}</Text>
+      <Pressable style={styles.headerRow} onPress={onMatchProfilePress} disabled={!onMatchProfilePress}>
+        {matchPhotoUrl ? (
+          <Image source={{ uri: matchPhotoUrl }} style={styles.headerAvatar} />
+        ) : (
+          <View style={[styles.headerAvatar, styles.headerAvatarFallback]}>
+            <Text style={styles.headerAvatarInitial}>{(matchName || 'M').charAt(0).toUpperCase()}</Text>
+          </View>
+        )}
+        <Text style={styles.headerTitle}>{matchName || 'Messages'}</Text>
+      </Pressable>
       <FlatList
         data={messages}
         inverted
@@ -81,8 +101,13 @@ export function MessagesScreen() {
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.messageBubble}>
+            <Text style={styles.senderName}>
+              {item.senderId === meId ? 'You' : matchName || 'Match'}
+            </Text>
             <Text style={styles.messageText}>{item.body}</Text>
-            <Text style={styles.time}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
+            <Text style={styles.time}>
+              {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            </Text>
           </View>
         )}
       />
@@ -105,10 +130,10 @@ const styles = StyleSheet.create({
     padding: ui.spacing.md
   },
   topRule: {
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.md,
-    marginBottom: ui.spacing.md
+    marginBottom: ui.spacing.sm
   },
   empty: {
     color: ui.color.textSecondary,
@@ -117,17 +142,43 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: ui.color.accent,
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '800',
-    marginBottom: ui.spacing.sm
+    textAlign: 'center'
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: ui.spacing.md
+  },
+  headerAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: ui.color.border
+  },
+  headerAvatarFallback: {
+    backgroundColor: ui.color.surface,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  headerAvatarInitial: {
+    color: ui.color.accent,
+    fontSize: 13,
+    fontWeight: '800'
   },
   listContent: {
-    paddingBottom: ui.spacing.sm
+    paddingBottom: ui.spacing.sm,
+    gap: 8
   },
   messageBubble: {
     backgroundColor: ui.color.surface,
-    padding: ui.spacing.sm,
-    borderRadius: ui.radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: ui.color.border,
     marginBottom: ui.spacing.xs,
@@ -135,24 +186,31 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: ui.color.textPrimary,
-    fontSize: ui.type.body
+    fontSize: 15,
+    lineHeight: 20
+  },
+  senderName: {
+    color: ui.color.accent,
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4
   },
   time: {
-    fontSize: ui.type.tiny,
+    fontSize: 11,
     color: ui.color.textMuted,
-    marginTop: 6
+    marginTop: 4
   },
   input: {
     height: ui.field.height,
     borderWidth: 1,
     borderColor: ui.color.border,
-    borderRadius: ui.radius.lg,
+    borderRadius: ui.radius.xl,
     paddingHorizontal: ui.field.paddingX,
-    marginTop: ui.spacing.xs,
+    marginTop: ui.spacing.sm,
     marginBottom: ui.spacing.xs,
-    backgroundColor: ui.color.surface,
+    backgroundColor: ui.color.card,
     color: ui.color.textPrimary,
-    fontSize: ui.type.body,
+    fontSize: 15,
     ...ui.shadow.soft
   }
 });

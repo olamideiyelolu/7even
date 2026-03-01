@@ -20,10 +20,10 @@ export const ui = {
     successText: '#1F5B3A'
   },
   radius: {
-    sm: 10,
-    md: 12,
-    lg: 16,
-    xl: 24,
+    sm: 12,
+    md: 14,
+    lg: 18,
+    xl: 28,
     pill: 999
   },
   spacing: {
@@ -46,24 +46,24 @@ export const ui = {
     paddingX: 18
   },
   button: {
-    height: 52,
-    textSize: 14,
-    letterSpacing: 2.2
+    height: 54,
+    textSize: 15,
+    letterSpacing: 0.4
   },
   shadow: {
     soft: {
-      shadowColor: '#A59D8E',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.45,
-      shadowRadius: 0,
-      elevation: 2
+      shadowColor: '#101828',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3
     },
     strong: {
-      shadowColor: '#8E2D26',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.7,
-      shadowRadius: 0,
-      elevation: 3
+      shadowColor: '#2C7A18',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.28,
+      shadowRadius: 14,
+      elevation: 4
     }
   }
 } as const;

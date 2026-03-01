@@ -7,11 +7,26 @@ import { ui } from '../theme/ui';
 
 const SCHOOL_YEARS = ['freshman', 'sophomore', 'junior', 'senior', 'graduate'] as const;
 const PRONOUNS = ['he/him', 'she/her', 'they/them', 'other'] as const;
+const GENDER_OPTIONS = ['male', 'female', 'non-binary', 'other'] as const;
+const LOOKING_FOR_OPTIONS = ['men', 'women', 'non-binary', 'all'] as const;
 type SchoolYear = (typeof SCHOOL_YEARS)[number];
 type Pronoun = (typeof PRONOUNS)[number];
+type Gender = (typeof GENDER_OPTIONS)[number];
+type LookingFor = (typeof LOOKING_FOR_OPTIONS)[number];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
-type RegisterField = 'fullName' | 'email' | 'password' | 'confirmPassword' | 'school' | 'major' | 'schoolYear' | 'pronouns';
+type RegisterField =
+  | 'fullName'
+  | 'email'
+  | 'password'
+  | 'confirmPassword'
+  | 'school'
+  | 'major'
+  | 'schoolYear'
+  | 'pronouns'
+  | 'gender'
+  | 'genderOther'
+  | 'lookingFor';
 type RegisterErrors = Partial<Record<RegisterField, string>>;
 
 export function RegisterScreen({ navigation }: Props) {
@@ -24,6 +39,9 @@ export function RegisterScreen({ navigation }: Props) {
   const [major, setMajor] = useState('');
   const [schoolYear, setSchoolYear] = useState<SchoolYear | ''>('');
   const [pronouns, setPronouns] = useState<Pronoun | ''>('');
+  const [gender, setGender] = useState<Gender | ''>('');
+  const [genderOther, setGenderOther] = useState('');
+  const [lookingFor, setLookingFor] = useState<LookingFor | ''>('');
   const [errors, setErrors] = useState<RegisterErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -42,6 +60,9 @@ export function RegisterScreen({ navigation }: Props) {
     if (!major.trim()) next.major = 'Major is required.';
     if (!schoolYear) next.schoolYear = 'School year is required.';
     if (!pronouns) next.pronouns = 'Pronouns are required.';
+    if (!gender) next.gender = 'Gender is required.';
+    if (gender === 'other' && !genderOther.trim()) next.genderOther = 'Please enter your gender.';
+    if (!lookingFor) next.lookingFor = 'Please choose who you are looking for.';
     return next;
   };
 
@@ -62,10 +83,11 @@ export function RegisterScreen({ navigation }: Props) {
         major: major.trim(),
         schoolYear: schoolYear as SchoolYear,
         pronouns: pronouns as Pronoun,
-        gender: 'woman',
+        gender: gender as Gender,
+        genderOther: gender === 'other' ? genderOther.trim() : undefined,
         orientation: 'straight',
+        lookingFor: lookingFor as LookingFor,
         profilePhotoUrl: 'https://example.com/profile.jpg',
-        preferredGenders: ['man'],
         preferredAgeMin: 18,
         preferredAgeMax: 30,
         interests: ['coffee', 'music']
@@ -207,6 +229,62 @@ export function RegisterScreen({ navigation }: Props) {
           ))}
         </View>
         {!!errors.pronouns && <Text style={styles.fieldError}>{errors.pronouns}</Text>}
+
+        <Text style={styles.fieldLabel}>GENDER</Text>
+        <View style={styles.chipRow}>
+          {GENDER_OPTIONS.map((option) => (
+            <Pressable
+              key={option}
+              style={[styles.chip, gender === option && styles.chipActive]}
+              onPress={() => {
+                setGender(option);
+                if (option !== 'other') setGenderOther('');
+                if (errors.gender || errors.genderOther) {
+                  setErrors((current) => ({ ...current, gender: undefined, genderOther: undefined }));
+                }
+              }}
+            >
+              <Text style={[styles.chipText, gender === option && styles.chipTextActive]}>
+                {option.toUpperCase()}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {!!errors.gender && <Text style={styles.fieldError}>{errors.gender}</Text>}
+        {gender === 'other' ? (
+          <>
+            <TextInput
+              style={[styles.input, errors.genderOther ? styles.inputError : undefined]}
+              placeholder="Type your gender"
+              placeholderTextColor={ui.color.textMuted}
+              value={genderOther}
+              onChangeText={(value) => {
+                setGenderOther(value);
+                if (errors.genderOther) setErrors((current) => ({ ...current, genderOther: undefined }));
+              }}
+            />
+            {!!errors.genderOther && <Text style={styles.fieldError}>{errors.genderOther}</Text>}
+          </>
+        ) : null}
+
+        <Text style={styles.fieldLabel}>LOOKING FOR</Text>
+        <View style={styles.chipRow}>
+          {LOOKING_FOR_OPTIONS.map((option) => (
+            <Pressable
+              key={option}
+              style={[styles.chip, lookingFor === option && styles.chipActive]}
+              onPress={() => {
+                setLookingFor(option);
+                if (errors.lookingFor) setErrors((current) => ({ ...current, lookingFor: undefined }));
+              }}
+            >
+              <Text style={[styles.chipText, lookingFor === option && styles.chipTextActive]}>
+                {option.toUpperCase()}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {!!errors.lookingFor && <Text style={styles.fieldError}>{errors.lookingFor}</Text>}
       </View>
 
       <View style={styles.footerBlock}>
@@ -231,25 +309,25 @@ const styles = StyleSheet.create({
   },
   topRule: {
     marginTop: ui.spacing.xs,
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.lg,
-    marginBottom: 22
+    marginBottom: 18
   },
   headerBlock: {
     alignItems: 'center',
-    marginBottom: 22
+    marginBottom: 16
   },
   kicker: {
     color: ui.color.primary,
     fontSize: 14,
-    letterSpacing: 3.4,
-    fontWeight: '700'
+    fontWeight: '700',
+    textTransform: 'uppercase'
   },
   logo: {
     marginTop: ui.spacing.sm,
     color: ui.color.textPrimary,
-    fontSize: 58,
+    fontSize: 52,
     fontWeight: '800'
   },
   formBlock: { gap: 8 },
@@ -257,7 +335,6 @@ const styles = StyleSheet.create({
     marginTop: 9,
     color: ui.color.accent,
     fontSize: ui.type.small,
-    letterSpacing: 2.4,
     fontWeight: '700'
   },
   input: {
@@ -268,7 +345,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ui.field.paddingX,
     backgroundColor: ui.color.surface,
     color: ui.color.textPrimary,
-    fontSize: ui.type.body,
+    fontSize: 16,
     fontWeight: '600',
     ...ui.shadow.soft
   },
@@ -290,15 +367,15 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   footerBlock: {
-    marginTop: 26,
+    marginTop: 20,
     alignItems: 'center',
-    gap: 18,
+    gap: 16,
     paddingBottom: 22
   },
   primaryButton: {
     width: '100%',
     height: ui.button.height,
-    borderRadius: 17,
+    borderRadius: ui.radius.lg,
     backgroundColor: ui.color.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -307,13 +384,11 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
-    letterSpacing: ui.button.letterSpacing,
     fontWeight: '800'
   },
   footerText: {
     color: ui.color.textMuted,
-    fontSize: ui.type.tiny,
-    letterSpacing: 2.2,
+    fontSize: 12,
     fontWeight: '700'
   },
   chipRow: {
@@ -324,20 +399,19 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: ui.radius.lg,
+    borderRadius: ui.radius.pill,
     borderWidth: 1,
     borderColor: ui.color.border,
     backgroundColor: ui.color.surface,
     ...ui.shadow.soft
   },
   chipActive: {
-    backgroundColor: ui.color.primary,
+    backgroundColor: '#FBE7E4',
     borderColor: ui.color.primary
   },
   chipText: {
-    color: ui.color.textMuted,
+    color: ui.color.textSecondary,
     fontSize: ui.type.small,
-    letterSpacing: 1.8,
     fontWeight: '700'
   },
   chipTextActive: {

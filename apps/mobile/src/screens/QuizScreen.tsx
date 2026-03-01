@@ -268,14 +268,14 @@ const styles = StyleSheet.create({
     padding: ui.spacing.lg
   },
   topRule: {
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.lg,
     marginBottom: ui.spacing.md
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#DBD6CB',
+    backgroundColor: '#E4E7EC',
     borderRadius: ui.radius.pill,
     marginBottom: ui.spacing.md
   },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   kicker: {
     color: ui.color.primary,
-    letterSpacing: 3,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: ui.spacing.xs
   },
@@ -300,10 +300,10 @@ const styles = StyleSheet.create({
     color: ui.color.textPrimary
   },
   prompt: {
-    fontSize: 18,
+    fontSize: 19,
     color: ui.color.textSecondary,
     marginBottom: ui.spacing.md,
-    lineHeight: 28
+    lineHeight: 30
   },
   helper: {
     marginBottom: ui.spacing.sm,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   option: {
     borderWidth: 1,
     borderColor: ui.color.border,
-    borderRadius: ui.radius.lg,
+    borderRadius: ui.radius.md,
     padding: ui.spacing.sm,
     backgroundColor: ui.color.surface,
     ...ui.shadow.soft

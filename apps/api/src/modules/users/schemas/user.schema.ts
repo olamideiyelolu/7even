@@ -64,7 +64,7 @@ export class User {
   @Prop()
   lastMatchedAt?: Date;
 
-  @Prop({ default: null, index: true })
+  @Prop({ type: Date, default: null, index: true })
   deletedAt?: Date | null;
 
   createdAt?: Date;

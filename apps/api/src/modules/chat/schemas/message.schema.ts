@@ -23,7 +23,7 @@ export class Message {
   @Prop({ default: false })
   flagged!: boolean;
 
-  @Prop()
+  @Prop({ type: String, default: null })
   flagReason?: string | null;
 }
 

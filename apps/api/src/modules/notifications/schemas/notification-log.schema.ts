@@ -11,7 +11,7 @@ export class NotificationLog {
   @Prop({ required: true, enum: ['match_created', 'new_message', 'match_expiring'] })
   eventType!: 'match_created' | 'new_message' | 'match_expiring';
 
-  @Prop({ required: true })
+  @Prop({ type: Object, required: true })
   payload!: Record<string, unknown>;
 
   @Prop({ default: false })

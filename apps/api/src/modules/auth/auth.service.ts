@@ -26,6 +26,7 @@ interface OtpEntry {
 
 @Injectable()
 export class AuthService {
+  // OTP storage is intentionally disabled for MVP local flow.
   private readonly emailOtps = new Map<string, OtpEntry>();
 
   constructor(
@@ -48,32 +49,20 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(dto.password);
     const user = await this.usersService.createFromRegistration(dto, passwordHash);
-
-    const otp = this.generateOtp();
-    const ttlMinutes = this.config.get<number>('EMAIL_OTP_TTL_MINUTES', 15);
-    this.emailOtps.set(dto.email.toLowerCase(), {
-      code: otp,
-      expiresAt: new Date(Date.now() + ttlMinutes * 60_000)
-    });
+    await this.usersService.markEmailVerified(dto.email.toLowerCase());
 
     return {
       userId: user.id,
       email: user.email,
-      otpPreview: otp,
-      message: 'Registered. Verify .edu email with OTP.'
+      otpPreview: null,
+      message: 'Registered. OTP verification is currently bypassed in local MVP.'
     };
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
-    const key = dto.email.toLowerCase();
-    const record = this.emailOtps.get(key);
-    if (!record || record.expiresAt < new Date() || record.code !== dto.otp) {
-      throw new UnauthorizedException('Invalid or expired OTP.');
-    }
-
-    this.emailOtps.delete(key);
-    await this.usersService.markEmailVerified(key);
-    return { verified: true };
+    // OTP is bypassed for local MVP.
+    await this.usersService.markEmailVerified(dto.email.toLowerCase());
+    return { verified: true, bypassed: true };
   }
 
   async login(dto: LoginDto) {
@@ -85,10 +74,6 @@ export class AuthService {
     const valid = await argon2.verify(user.passwordHash, dto.password);
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials.');
-    }
-
-    if (!user.emailVerifiedAt) {
-      throw new ForbiddenException('Verify your .edu email before login.');
     }
 
     const tokens = await this.issueTokens(user.id, user.email);

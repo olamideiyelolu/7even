@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MatchScreen } from './MatchScreen';
 import { MessagesScreen } from './MessagesScreen';
 import { ProfileScreen } from './ProfileScreen';
+import { ui } from '../theme/ui';
 
 type TabKey = 'home' | 'messages';
 
@@ -15,7 +16,7 @@ export function MainTabsScreen() {
       return <ProfileScreen onBack={() => setShowProfile(false)} />;
     }
     if (tab === 'messages') return <MessagesScreen />;
-    return <MatchScreen onProfilePress={() => setShowProfile(true)} />;
+    return <MatchScreen onProfilePress={() => setShowProfile(true)} onMessagesPress={() => setTab('messages')} />;
   }, [tab, showProfile]);
 
   return (
@@ -23,11 +24,11 @@ export function MainTabsScreen() {
       <View style={styles.content}>{content}</View>
       {!showProfile ? (
         <View style={styles.tabBar}>
-          <Pressable style={[styles.tab, tab === 'home' && styles.tabActive]} onPress={() => setTab('home')}>
-            <Text style={tab === 'home' ? styles.tabTextActive : styles.tabText}>Home</Text>
+          <Pressable style={styles.tab} onPress={() => setTab('home')}>
+            <Text style={[styles.tabText, tab === 'home' && styles.tabTextActive]}>HOME</Text>
           </Pressable>
-          <Pressable style={[styles.tab, tab === 'messages' && styles.tabActive]} onPress={() => setTab('messages')}>
-            <Text style={tab === 'messages' ? styles.tabTextActive : styles.tabText}>Messages</Text>
+          <Pressable style={[styles.tab, styles.tabDivider]} onPress={() => setTab('messages')}>
+            <Text style={[styles.tabText, tab === 'messages' && styles.tabTextActive]}>MESSAGES</Text>
           </Pressable>
         </View>
       ) : null}
@@ -38,35 +39,34 @@ export function MainTabsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F4EE'
+    backgroundColor: ui.color.bg
   },
   content: {
     flex: 1
   },
   tabBar: {
     flexDirection: 'row',
-    padding: 10,
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#D6DBD4',
-    backgroundColor: '#FFFFFF'
+    height: 68,
+    borderTopWidth: 2,
+    borderTopColor: ui.color.borderStrong,
+    backgroundColor: ui.color.bg
   },
   tab: {
     flex: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#F1F1F1'
+    justifyContent: 'center'
   },
-  tabActive: {
-    backgroundColor: '#154734'
+  tabDivider: {
+    borderLeftWidth: 1,
+    borderLeftColor: ui.color.borderStrong
   },
   tabText: {
-    color: '#3E3E3E',
-    fontWeight: '600'
+    color: ui.color.textMuted,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.6
   },
   tabTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700'
+    color: ui.color.accent
   }
 });

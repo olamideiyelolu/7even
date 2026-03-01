@@ -4,6 +4,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { QuizDraftPayload, QuizQuestionResponse, QuizQuestionsPayload } from '../types/api';
+import { ui } from '../theme/ui';
 
 const BIG_FIVE_LABELS = [
   { value: 1, label: 'Very Inaccurate' },
@@ -62,12 +63,8 @@ export function QuizScreen() {
             setIndex(Math.max(0, Math.min(draft.currentIndex, Math.max(0, payload.questions.length - 1))));
             setIsValueStep(draft.isValueStep);
             setValueMode(draft.valueMode);
-            setSelectedValues(
-              draft.selectedValues.filter((value) => payload.valueCards.includes(value)).slice(0, 10)
-            );
-            setRankedValues(
-              draft.rankedValues.filter((value) => payload.valueCards.includes(value)).slice(0, 10)
-            );
+            setSelectedValues(draft.selectedValues.filter((value) => payload.valueCards.includes(value)).slice(0, 10));
+            setRankedValues(draft.rankedValues.filter((value) => payload.valueCards.includes(value)).slice(0, 10));
           }
         }
       } catch (error) {
@@ -105,18 +102,7 @@ export function QuizScreen() {
     }, 500);
 
     return () => clearTimeout(saveTimer);
-  }, [
-    loading,
-    submitting,
-    questions,
-    answers,
-    index,
-    isValueStep,
-    valueMode,
-    selectedValues,
-    rankedValues,
-    accessToken
-  ]);
+  }, [loading, submitting, questions, answers, index, isValueStep, valueMode, selectedValues, rankedValues, accessToken]);
 
   const current = questions[index];
   const scale = current?.category === 'moral' ? MORAL_LABELS : BIG_FIVE_LABELS;
@@ -156,6 +142,7 @@ export function QuizScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
+        <View style={styles.topRule} />
         <Text style={styles.title}>Loading quiz...</Text>
       </View>
     );
@@ -164,6 +151,7 @@ export function QuizScreen() {
   if (questions.length === 0) {
     return (
       <View style={styles.container}>
+        <View style={styles.topRule} />
         <Text style={styles.title}>No quiz questions available.</Text>
       </View>
     );
@@ -172,6 +160,7 @@ export function QuizScreen() {
   if (!isValueStep && !current) {
     return (
       <View style={styles.container}>
+        <View style={styles.topRule} />
         <Text style={styles.title}>Quiz state is out of sync. Please restart onboarding.</Text>
       </View>
     );
@@ -181,12 +170,14 @@ export function QuizScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topRule} />
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${Math.max(5, progress * 100)}%` }]} />
       </View>
 
       {!isValueStep ? (
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.kicker}>PERSONALITY QUIZ</Text>
           <Text style={styles.title}>Question {index + 1} of {questions.length}</Text>
           <Text style={styles.prompt}>{activeQuestion.prompt}</Text>
           <View style={styles.optionList}>
@@ -206,31 +197,29 @@ export function QuizScreen() {
           <PrimaryButton
             label={index === questions.length - 1 ? 'Continue to value sorting' : 'Next'}
             onPress={() => {
-              if (index === questions.length - 1) {
-                setIsValueStep(true);
-              } else {
-                setIndex((prev) => prev + 1);
-              }
+              if (index === questions.length - 1) setIsValueStep(true);
+              else setIndex((prev) => prev + 1);
             }}
             disabled={!canContinueQuestion}
           />
         </ScrollView>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.kicker}>VALUES QUIZ</Text>
           <Text style={styles.title}>Value Sort</Text>
           <Text style={styles.helper}>
             {valueMode === 'choose'
               ? `Choose exactly 10 values from all 50 (${selectedValues.length}/10 selected)`
               : `Rank your selected 10 values from most to least important (${rankedValues.length}/10 ranked)`}
           </Text>
-          <View style={styles.optionList}>
+          <View style={styles.bubbleGrid}>
             {(valueMode === 'choose' ? valueCards : selectedValues).map((value) => {
               const selected = valueMode === 'choose' ? selectedValues.includes(value) : rankedValues.includes(value);
               const rank = rankedValues.indexOf(value);
               return (
                 <Pressable
                   key={value}
-                  style={[styles.option, selected && styles.optionActive]}
+                  style={[styles.bubble, selected && styles.bubbleActive]}
                   onPress={() => {
                     if (valueMode === 'choose') {
                       setSelectedValues((prev) => {
@@ -246,7 +235,7 @@ export function QuizScreen() {
                     }
                   }}
                 >
-                  <Text style={selected ? styles.optionTextActive : styles.optionText}>
+                  <Text style={selected ? styles.bubbleTextActive : styles.bubbleText}>
                     {valueMode === 'rank' && rank >= 0 ? `${rank + 1}. ${value}` : value}
                   </Text>
                 </Pressable>
@@ -273,45 +262,103 @@ export function QuizScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6F4EE', padding: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: ui.color.bg,
+    padding: ui.spacing.lg
+  },
+  topRule: {
+    height: 7,
+    backgroundColor: ui.color.topRule,
+    marginHorizontal: -ui.spacing.lg,
+    marginBottom: ui.spacing.md
+  },
   progressTrack: {
     height: 8,
-    backgroundColor: '#D6DBD4',
-    borderRadius: 999,
-    marginBottom: 16
+    backgroundColor: '#DBD6CB',
+    borderRadius: ui.radius.pill,
+    marginBottom: ui.spacing.md
   },
   progressFill: {
     height: 8,
-    borderRadius: 999,
-    backgroundColor: '#1F5F4A'
+    borderRadius: ui.radius.pill,
+    backgroundColor: ui.color.primary
   },
   scrollContent: {
-    paddingBottom: 32
+    paddingBottom: ui.spacing.xxl
   },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 8, color: '#154734' },
+  kicker: {
+    color: ui.color.primary,
+    letterSpacing: 3,
+    fontWeight: '700',
+    marginBottom: ui.spacing.xs
+  },
+  title: {
+    fontSize: ui.type.heading,
+    fontWeight: '800',
+    marginBottom: ui.spacing.xs,
+    color: ui.color.textPrimary
+  },
   prompt: {
     fontSize: 18,
-    color: '#1E2E27',
-    marginBottom: 16
+    color: ui.color.textSecondary,
+    marginBottom: ui.spacing.md,
+    lineHeight: 28
   },
-  helper: { marginBottom: 12, color: '#4A4A4A' },
-  optionList: { gap: 10, marginBottom: 16 },
+  helper: {
+    marginBottom: ui.spacing.sm,
+    color: ui.color.textSecondary,
+    fontSize: ui.type.body
+  },
+  optionList: { gap: 10, marginBottom: ui.spacing.md },
   option: {
     borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#FFFFFF'
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.lg,
+    padding: ui.spacing.sm,
+    backgroundColor: ui.color.surface,
+    ...ui.shadow.soft
   },
   optionActive: {
-    borderColor: '#154734',
-    backgroundColor: '#E8F0EC'
+    borderColor: ui.color.primary,
+    backgroundColor: '#FBE7E4'
   },
   optionText: {
-    color: '#2E2E2E'
+    color: ui.color.textSecondary,
+    fontSize: ui.type.body,
+    fontWeight: '600'
   },
   optionTextActive: {
-    color: '#154734',
-    fontWeight: '700'
+    color: ui.color.primary,
+    fontWeight: '700',
+    fontSize: ui.type.body
+  },
+  bubbleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: ui.spacing.md
+  },
+  bubble: {
+    borderWidth: 1,
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: ui.color.surface
+  },
+  bubbleActive: {
+    borderColor: ui.color.primary,
+    backgroundColor: '#FBE7E4'
+  },
+  bubbleText: {
+    color: ui.color.textSecondary,
+    fontWeight: '600',
+    fontSize: 14
+  },
+  bubbleTextActive: {
+    color: ui.color.primary,
+    fontWeight: '700',
+    fontSize: 14
   }
 });

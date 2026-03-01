@@ -1,268 +1,346 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import type { RootStackParamList } from '../../App';
+import { ui } from '../theme/ui';
+
+const SCHOOL_YEARS = ['freshman', 'sophomore', 'junior', 'senior', 'graduate'] as const;
+const PRONOUNS = ['he/him', 'she/her', 'they/them', 'other'] as const;
+type SchoolYear = (typeof SCHOOL_YEARS)[number];
+type Pronoun = (typeof PRONOUNS)[number];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
-const CTA_OPTIONS = ['Red Line', 'Brown Line', 'Purple Line', 'Green Line', 'Blue Line', 'Orange Line', 'Metra', 'Bus', 'I Drive'] as const;
-const PRONOUN_OPTIONS = ['he/him', 'she/her', 'they/them', 'other'] as const;
-const GENDER_OPTIONS = ['male', 'female', 'non-binary', 'other'] as const;
-const LOOKING_FOR_OPTIONS = ['men', 'women', 'non-binary', 'all'] as const;
-function formatPronounsLabel(value: string) {
-  if (value.includes('/')) {
-    return value
-      .split('/')
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join('/');
-  }
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-}
-
-const SCHOOL_BY_DOMAIN: Array<{ school: string; domains: string[] }> = [
-  { school: 'DePaul University', domains: ['depaul.edu'] },
-  { school: 'University of Illinois Chicago', domains: ['uic.edu'] },
-  { school: 'Roosevelt University', domains: ['roosevelt.edu'] },
-  { school: 'Columbia College Chicago', domains: ['colum.edu', 'columbiachicago.edu'] },
-  { school: 'Harold Washington College', domains: ['haroldwashington.edu', 'hwc.ccc.edu'] }
-];
-
-function resolveSchoolFromEmail(email: string) {
-  const domain = email.toLowerCase().split('@')[1]?.trim();
-  if (!domain) return null;
-
-  for (const entry of SCHOOL_BY_DOMAIN) {
-    if (entry.domains.some((allowedDomain) => domain === allowedDomain || domain.endsWith(`.${allowedDomain}`))) {
-      return entry.school;
-    }
-  }
-  return null;
-}
+type RegisterField = 'fullName' | 'email' | 'password' | 'confirmPassword' | 'school' | 'major' | 'schoolYear' | 'pronouns';
+type RegisterErrors = Partial<Record<RegisterField, string>>;
 
 export function RegisterScreen({ navigation }: Props) {
   const { register } = useAuth();
-
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
-  const [schoolYear, setSchoolYear] = useState<'freshman' | 'sophomore' | 'junior' | 'senior' | 'graduate'>('freshman');
-  const [gender, setGender] = useState<(typeof GENDER_OPTIONS)[number]>('female');
-  const [genderOther, setGenderOther] = useState('');
-  const [lookingFor, setLookingFor] = useState<(typeof LOOKING_FOR_OPTIONS)[number]>('all');
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
-  const [ctaLine, setCtaLine] = useState<(typeof CTA_OPTIONS)[number] | ''>('');
-  const [pronouns, setPronouns] = useState<(typeof PRONOUN_OPTIONS)[number]>('she/her');
-  const school = resolveSchoolFromEmail(email);
+  const [schoolYear, setSchoolYear] = useState<SchoolYear | ''>('');
+  const [pronouns, setPronouns] = useState<Pronoun | ''>('');
+  const [errors, setErrors] = useState<RegisterErrors>({});
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const validate = (): RegisterErrors => {
+    const next: RegisterErrors = {};
+    const normalizedEmail = email.trim();
+
+    if (!fullName.trim()) next.fullName = 'Full name is required.';
+    if (!normalizedEmail) next.email = 'Email is required.';
+    else if (!normalizedEmail.endsWith('.edu')) next.email = 'Use a valid .edu email address.';
+    if (!password) next.password = 'Password is required.';
+    else if (password.length < 8) next.password = 'Password must be at least 8 characters.';
+    if (!confirmPassword) next.confirmPassword = 'Please confirm your password.';
+    else if (confirmPassword !== password) next.confirmPassword = 'Passwords do not match.';
+    if (!school.trim()) next.school = 'School is required.';
+    if (!major.trim()) next.major = 'Major is required.';
+    if (!schoolYear) next.schoolYear = 'School year is required.';
+    if (!pronouns) next.pronouns = 'Pronouns are required.';
+    return next;
+  };
 
   const handleRegister = async () => {
-    if (!school) {
-      Alert.alert(
-        'Unsupported school email',
-        'Please use a school email from: DePaul University, University of Illinois Chicago, Roosevelt University, Columbia College Chicago, or Harold Washington College.'
-      );
-      return;
-    }
-    if (!major.trim()) {
-      Alert.alert('Missing major', 'Please enter your major.');
-      return;
-    }
-    if (gender === 'other' && !genderOther.trim()) {
-      Alert.alert('Missing gender', 'Please enter your gender for "Other".');
-      return;
-    }
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    setServerError(null);
+    if (Object.keys(nextErrors).length > 0) return;
 
     try {
       await register({
-        email,
+        email: email.trim(),
         password,
-        fullName,
+        fullName: fullName.trim(),
         age: 20,
         dateOfBirth: '2004-01-01',
-        school,
+        school: school.trim(),
         major: major.trim(),
-        schoolYear,
-        gender,
-        genderOther: genderOther.trim() || undefined,
+        schoolYear: schoolYear as SchoolYear,
+        pronouns: pronouns as Pronoun,
+        gender: 'woman',
         orientation: 'straight',
-        lookingFor,
-        pronouns,
-        profilePhotoUrl: profilePhotoUrl.trim() || 'https://example.com/profile.jpg',
-        ctaLine: ctaLine || undefined,
-        preferredGenders: [],
+        profilePhotoUrl: 'https://example.com/profile.jpg',
+        preferredGenders: ['man'],
         preferredAgeMin: 18,
         preferredAgeMax: 30,
         interests: ['coffee', 'music']
       });
-
-      Alert.alert('Registered', 'Check your OTP via backend response, verify email, then login.');
       navigation.navigate('Login');
     } catch (error) {
-      Alert.alert('Registration failed', error instanceof Error ? error.message : 'Unknown error');
+      setServerError(error instanceof Error ? error.message : 'Unable to create account.');
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TextInput style={styles.input} placeholder="Full name" value={fullName} onChangeText={setFullName} />
-      <TextInput style={styles.input} placeholder=".edu email" autoCapitalize="none" value={email} onChangeText={setEmail} />
-      <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-      <TextInput style={styles.input} placeholder="Major" value={major} onChangeText={setMajor} />
-      <Text style={styles.optionLabel}>Gender</Text>
-      <View style={styles.optionGrid}>
-        {GENDER_OPTIONS.map((option) => {
-          const selected = gender === option;
-          return (
-            <Pressable
-              key={option}
-              style={[styles.optionChip, selected && styles.optionChipActive]}
-              onPress={() => setGender(option)}
-            >
-              <Text style={selected ? styles.optionTextActive : styles.optionText}>{option[0].toUpperCase() + option.slice(1)}</Text>
-            </Pressable>
-          );
-        })}
+    <ScrollView contentContainerStyle={styles.screen}>
+      <View style={styles.topRule} />
+
+      <View style={styles.headerBlock}>
+        <Text style={styles.kicker}>CREATE ACCOUNT</Text>
+        <Text style={styles.logo}>7even</Text>
       </View>
-      {gender === 'other' ? (
-        <TextInput style={styles.input} placeholder="Your gender" value={genderOther} onChangeText={setGenderOther} />
-      ) : null}
-      <Text style={styles.optionLabel}>Looking For</Text>
-      <View style={styles.optionGrid}>
-        {LOOKING_FOR_OPTIONS.map((option) => {
-          const selected = lookingFor === option;
-          return (
+
+      {!!serverError && <Text style={styles.serverError}>{serverError}</Text>}
+
+      <View style={styles.formBlock}>
+        <Text style={styles.fieldLabel}>FULL NAME</Text>
+        <TextInput
+          style={[styles.input, errors.fullName ? styles.inputError : undefined]}
+          placeholder="Student name"
+          placeholderTextColor={ui.color.textMuted}
+          value={fullName}
+          onChangeText={(value) => {
+            setFullName(value);
+            if (errors.fullName) setErrors((current) => ({ ...current, fullName: undefined }));
+          }}
+        />
+        {!!errors.fullName && <Text style={styles.fieldError}>{errors.fullName}</Text>}
+
+        <Text style={styles.fieldLabel}>EMAIL</Text>
+        <TextInput
+          style={[styles.input, errors.email ? styles.inputError : undefined]}
+          placeholder="kveloso@depaul.edu"
+          placeholderTextColor={ui.color.textMuted}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={(value) => {
+            setEmail(value);
+            if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
+          }}
+        />
+        {!!errors.email && <Text style={styles.fieldError}>{errors.email}</Text>}
+
+        <Text style={styles.fieldLabel}>PASSWORD</Text>
+        <TextInput
+          style={[styles.input, errors.password ? styles.inputError : undefined]}
+          placeholder="••••••••"
+          placeholderTextColor={ui.color.textMuted}
+          secureTextEntry
+          value={password}
+          onChangeText={(value) => {
+            setPassword(value);
+            if (errors.password) setErrors((current) => ({ ...current, password: undefined }));
+          }}
+        />
+        {!!errors.password && <Text style={styles.fieldError}>{errors.password}</Text>}
+
+        <Text style={styles.fieldLabel}>CONFIRM PASSWORD</Text>
+        <TextInput
+          style={[styles.input, errors.confirmPassword ? styles.inputError : undefined]}
+          placeholder="••••••••"
+          placeholderTextColor={ui.color.textMuted}
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={(value) => {
+            setConfirmPassword(value);
+            if (errors.confirmPassword) setErrors((current) => ({ ...current, confirmPassword: undefined }));
+          }}
+        />
+        {!!errors.confirmPassword && <Text style={styles.fieldError}>{errors.confirmPassword}</Text>}
+
+        <Text style={styles.fieldLabel}>SCHOOL</Text>
+        <TextInput
+          style={[styles.input, errors.school ? styles.inputError : undefined]}
+          placeholder="DePaul University"
+          placeholderTextColor={ui.color.textMuted}
+          value={school}
+          onChangeText={(value) => {
+            setSchool(value);
+            if (errors.school) setErrors((current) => ({ ...current, school: undefined }));
+          }}
+        />
+        {!!errors.school && <Text style={styles.fieldError}>{errors.school}</Text>}
+
+        <Text style={styles.fieldLabel}>MAJOR</Text>
+        <TextInput
+          style={[styles.input, errors.major ? styles.inputError : undefined]}
+          placeholder="Computer Science"
+          placeholderTextColor={ui.color.textMuted}
+          value={major}
+          onChangeText={(value) => {
+            setMajor(value);
+            if (errors.major) setErrors((current) => ({ ...current, major: undefined }));
+          }}
+        />
+        {!!errors.major && <Text style={styles.fieldError}>{errors.major}</Text>}
+
+        <Text style={styles.fieldLabel}>SCHOOL YEAR</Text>
+        <View style={styles.chipRow}>
+          {SCHOOL_YEARS.map((yr) => (
             <Pressable
-              key={option}
-              style={[styles.optionChip, selected && styles.optionChipActive]}
-              onPress={() => setLookingFor(option)}
+              key={yr}
+              style={[styles.chip, schoolYear === yr && styles.chipActive]}
+              onPress={() => {
+                setSchoolYear(yr);
+                if (errors.schoolYear) setErrors((current) => ({ ...current, schoolYear: undefined }));
+              }}
             >
-              <Text style={selected ? styles.optionTextActive : styles.optionText}>
-                {option === 'all' ? 'All' : option === 'non-binary' ? 'Non-binary' : option[0].toUpperCase() + option.slice(1)}
+              <Text style={[styles.chipText, schoolYear === yr && styles.chipTextActive]}>
+                {yr.toUpperCase()}
               </Text>
             </Pressable>
-          );
-        })}
-      </View>
-      <Text style={styles.optionLabel}>Pronouns</Text>
-      <View style={styles.optionGrid}>
-        {PRONOUN_OPTIONS.map((option) => {
-          const selected = pronouns === option;
-          return (
+          ))}
+        </View>
+        {!!errors.schoolYear && <Text style={styles.fieldError}>{errors.schoolYear}</Text>}
+
+        <Text style={styles.fieldLabel}>PRONOUNS</Text>
+        <View style={styles.chipRow}>
+          {PRONOUNS.map((p) => (
             <Pressable
-              key={option}
-              style={[styles.optionChip, selected && styles.optionChipActive]}
-              onPress={() => setPronouns(option)}
+              key={p}
+              style={[styles.chip, pronouns === p && styles.chipActive]}
+              onPress={() => {
+                setPronouns(p);
+                if (errors.pronouns) setErrors((current) => ({ ...current, pronouns: undefined }));
+              }}
             >
-              <Text style={selected ? styles.optionTextActive : styles.optionText}>{formatPronounsLabel(option)}</Text>
+              <Text style={[styles.chipText, pronouns === p && styles.chipTextActive]}>
+                {p.toUpperCase()}
+              </Text>
             </Pressable>
-          );
-        })}
+          ))}
+        </View>
+        {!!errors.pronouns && <Text style={styles.fieldError}>{errors.pronouns}</Text>}
       </View>
-      <View style={styles.schoolYearWrap}>
-        {(['freshman', 'sophomore', 'junior', 'senior', 'graduate'] as const).map((year) => (
-          <PrimaryButton
-            key={year}
-            label={schoolYear === year ? `School Year: ${year[0].toUpperCase()}${year.slice(1)}` : `${year[0].toUpperCase()}${year.slice(1)}`}
-            onPress={() => setSchoolYear(year)}
-          />
-        ))}
+
+      <View style={styles.footerBlock}>
+        <Pressable style={styles.primaryButton} onPress={handleRegister}>
+          <Text style={styles.primaryButtonText}>CREATE ACCOUNT</Text>
+        </Pressable>
+
+        <Pressable onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.footerText}>HAVE AN ACCOUNT? LOG IN</Text>
+        </Pressable>
       </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Profile photo URL (optional)"
-        autoCapitalize="none"
-        value={profilePhotoUrl}
-        onChangeText={setProfilePhotoUrl}
-      />
-      <Text style={styles.optionLabel}>CTA Line (optional)</Text>
-      <View style={styles.optionGrid}>
-        {CTA_OPTIONS.map((option) => {
-          const selected = ctaLine === option;
-          return (
-            <Pressable
-              key={option}
-              style={[styles.optionChip, selected && styles.optionChipActive]}
-              onPress={() => setCtaLine((prev) => (prev === option ? '' : option))}
-            >
-              <Text style={selected ? styles.optionTextActive : styles.optionText}>{option}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      <View style={styles.schoolBox}>
-        <Text style={styles.schoolLabel}>School</Text>
-        <Text style={school ? styles.schoolValue : styles.schoolValueMuted}>
-          {school ?? 'Enter a supported school email to auto-select your college'}
-        </Text>
-      </View>
-      <PrimaryButton label="Create account" onPress={handleRegister} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#F6F4EE', flexGrow: 1, justifyContent: 'center' },
+  screen: {
+    flexGrow: 1,
+    backgroundColor: ui.color.bg,
+    paddingHorizontal: ui.spacing.lg,
+    paddingBottom: ui.spacing.xl
+  },
+  topRule: {
+    marginTop: ui.spacing.xs,
+    height: 7,
+    backgroundColor: ui.color.topRule,
+    marginHorizontal: -ui.spacing.lg,
+    marginBottom: 22
+  },
+  headerBlock: {
+    alignItems: 'center',
+    marginBottom: 22
+  },
+  kicker: {
+    color: ui.color.primary,
+    fontSize: 14,
+    letterSpacing: 3.4,
+    fontWeight: '700'
+  },
+  logo: {
+    marginTop: ui.spacing.sm,
+    color: ui.color.textPrimary,
+    fontSize: 58,
+    fontWeight: '800'
+  },
+  formBlock: { gap: 8 },
+  fieldLabel: {
+    marginTop: 9,
+    color: ui.color.accent,
+    fontSize: ui.type.small,
+    letterSpacing: 2.4,
+    fontWeight: '700'
+  },
   input: {
+    height: ui.field.height,
     borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#FFFFFF'
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.lg,
+    paddingHorizontal: ui.field.paddingX,
+    backgroundColor: ui.color.surface,
+    color: ui.color.textPrimary,
+    fontSize: ui.type.body,
+    fontWeight: '600',
+    ...ui.shadow.soft
   },
-  schoolBox: {
-    borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#F9F9F9'
-  },
-  schoolLabel: {
-    color: '#6A6A6A',
-    fontSize: 12,
-    marginBottom: 4
-  },
-  schoolValue: {
-    color: '#1E2E27',
-    fontSize: 15,
+  inputError: { borderColor: ui.color.error },
+  fieldError: {
+    color: ui.color.error,
+    marginTop: -2,
+    marginBottom: 2,
+    fontSize: ui.type.small,
     fontWeight: '600'
   },
-  schoolValueMuted: {
-    color: '#8A8A8A',
-    fontSize: 15
+  serverError: {
+    color: '#7A271A',
+    backgroundColor: ui.color.errorBg,
+    borderColor: ui.color.errorBorder,
+    borderWidth: 1,
+    borderRadius: ui.radius.md,
+    padding: ui.spacing.sm,
+    marginBottom: 14
   },
-  schoolYearWrap: {
-    marginBottom: 12
+  footerBlock: {
+    marginTop: 26,
+    alignItems: 'center',
+    gap: 18,
+    paddingBottom: 22
   },
-  optionLabel: {
-    color: '#4A4A4A',
-    marginBottom: 8
+  primaryButton: {
+    width: '100%',
+    height: ui.button.height,
+    borderRadius: 17,
+    backgroundColor: ui.color.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...ui.shadow.strong
   },
-  optionGrid: {
+  primaryButtonText: {
+    color: ui.color.textOnPrimary,
+    fontSize: ui.button.textSize,
+    letterSpacing: ui.button.letterSpacing,
+    fontWeight: '800'
+  },
+  footerText: {
+    color: ui.color.textMuted,
+    fontSize: ui.type.tiny,
+    letterSpacing: 2.2,
+    fontWeight: '700'
+  },
+  chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12
+    gap: 8
   },
-  optionChip: {
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: ui.radius.lg,
     borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: '#FFFFFF'
+    borderColor: ui.color.border,
+    backgroundColor: ui.color.surface,
+    ...ui.shadow.soft
   },
-  optionChipActive: {
-    backgroundColor: '#E8F0EC',
-    borderColor: '#154734'
+  chipActive: {
+    backgroundColor: ui.color.primary,
+    borderColor: ui.color.primary
   },
-  optionText: {
-    color: '#2E2E2E'
-  },
-  optionTextActive: {
-    color: '#154734',
+  chipText: {
+    color: ui.color.textMuted,
+    fontSize: ui.type.small,
+    letterSpacing: 1.8,
     fontWeight: '700'
+  },
+  chipTextActive: {
+    color: ui.color.textOnPrimary
   }
 });

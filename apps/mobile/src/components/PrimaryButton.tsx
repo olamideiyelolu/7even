@@ -1,35 +1,77 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { ui } from '../theme/ui';
 
 export function PrimaryButton({
   label,
   onPress,
-  disabled = false
+  disabled = false,
+  variant = 'primary'
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  variant?: 'primary' | 'secondary' | 'ghost';
 }) {
+  const isPrimary = variant === 'primary';
+  const isSecondary = variant === 'secondary';
+
   return (
-    <Pressable style={[styles.button, disabled && styles.buttonDisabled]} onPress={onPress} disabled={disabled}>
-      <Text style={styles.text}>{label}</Text>
+    <Pressable
+      style={[
+        styles.button,
+        isPrimary && styles.buttonPrimary,
+        isSecondary && styles.buttonSecondary,
+        variant === 'ghost' && styles.buttonGhost,
+        disabled && styles.buttonDisabled
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Text
+        style={[
+          styles.text,
+          (isSecondary || variant === 'ghost') && styles.textSecondary
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#154734',
-    paddingVertical: 12,
-    borderRadius: 12,
+    height: ui.button.height,
+    borderRadius: ui.radius.lg,
     alignItems: 'center',
-    marginVertical: 8
+    justifyContent: 'center',
+    marginVertical: ui.spacing.xs
+  },
+  buttonPrimary: {
+    backgroundColor: ui.color.primary,
+    ...ui.shadow.strong
+  },
+  buttonSecondary: {
+    backgroundColor: ui.color.surface,
+    borderColor: ui.color.borderStrong,
+    borderWidth: 1
+  },
+  buttonGhost: {
+    backgroundColor: 'transparent'
   },
   buttonDisabled: {
     opacity: 0.45
   },
   text: {
-    color: '#FFFFFF',
+    color: ui.color.textOnPrimary,
+    fontSize: ui.button.textSize,
+    letterSpacing: ui.button.letterSpacing,
+    textTransform: 'uppercase',
+    fontWeight: '800'
+  },
+  textSecondary: {
+    color: ui.color.accent,
     fontWeight: '700'
   }
 });

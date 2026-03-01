@@ -4,6 +4,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { QuizDraftPayload } from '../types/api';
+import { ui } from '../theme/ui';
 
 export function QuizIntroScreen() {
   const { accessToken, acceptQuizIntro, setQuizStartMode, logout } = useAuth();
@@ -39,16 +40,18 @@ export function QuizIntroScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topRule} />
+      <Text style={styles.kicker}>ONBOARDING</Text>
       <Text style={styles.title}>Before You Start</Text>
       <Text style={styles.message}>
-        The personality/values test takes approximately 15 minutes. You can save your progress if you do not finish.
-        {'\n'}
-        {'\n'}
+        The personality and values test takes approximately 15 minutes. You can save progress if you do not finish.
+        {'\n\n'}
         Do you want to continue?
       </Text>
+
       {hasDraftToResume ? (
         <>
-          <Text style={styles.notice}>You already started this quiz. Please resume where you left off.</Text>
+          <Text style={styles.notice}>You already started this quiz. Resume where you left off.</Text>
           <PrimaryButton
             label="Resume"
             onPress={() => {
@@ -56,12 +59,12 @@ export function QuizIntroScreen() {
               acceptQuizIntro();
             }}
           />
-          <PrimaryButton label="Not now" onPress={logout} />
+          <PrimaryButton label="Not now" variant="secondary" onPress={logout} />
         </>
       ) : (
         <>
           <PrimaryButton label={checkingDraft ? 'Checking...' : 'Continue'} onPress={() => void handleContinue()} disabled={checkingDraft} />
-          <PrimaryButton label="Not now" onPress={logout} />
+          <PrimaryButton label="Not now" variant="secondary" onPress={logout} />
         </>
       )}
     </View>
@@ -71,25 +74,42 @@ export function QuizIntroScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: ui.spacing.lg,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#F6F4EE'
+    backgroundColor: ui.color.bg
+  },
+  topRule: {
+    position: 'absolute',
+    top: ui.spacing.xs,
+    left: 0,
+    right: 0,
+    height: 7,
+    backgroundColor: ui.color.topRule
+  },
+  kicker: {
+    color: ui.color.primary,
+    letterSpacing: 3,
+    fontWeight: '700',
+    marginBottom: ui.spacing.sm
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#154734'
+    fontSize: ui.type.heading,
+    fontWeight: '800',
+    marginBottom: ui.spacing.md,
+    color: ui.color.textPrimary
   },
   message: {
-    fontSize: 18,
-    lineHeight: 28,
-    color: '#1E2E27',
-    marginBottom: 20
+    fontSize: ui.type.body,
+    lineHeight: 26,
+    color: ui.color.textSecondary,
+    marginBottom: ui.spacing.lg
   },
   notice: {
-    color: '#154734',
-    marginBottom: 12,
+    color: ui.color.successText,
+    backgroundColor: ui.color.successBg,
+    borderRadius: ui.radius.md,
+    padding: ui.spacing.sm,
+    marginBottom: ui.spacing.md,
     fontWeight: '600'
   }
 });

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { API_ORIGIN } from '../config/network';
 import { MatchResponse } from '../types/api';
+import { ui } from '../theme/ui';
 
 interface ChatMessage {
   _id: string;
@@ -61,6 +62,7 @@ export function MessagesScreen() {
   if (!matchId) {
     return (
       <View style={styles.container}>
+        <View style={styles.topRule} />
         <Text style={styles.empty}>No active match yet. Messages will appear once you are matched.</Text>
       </View>
     );
@@ -68,39 +70,80 @@ export function MessagesScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topRule} />
       <FlatList
         data={messages}
         inverted
+        contentContainerStyle={styles.listContent}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.messageBubble}>
-            <Text>{item.body}</Text>
+            <Text style={styles.messageText}>{item.body}</Text>
             <Text style={styles.time}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
           </View>
         )}
       />
-      <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="Send a message" />
-      <PrimaryButton label="Send" onPress={send} />
+      <TextInput
+        style={styles.input}
+        value={text}
+        onChangeText={setText}
+        placeholder="Send a message"
+        placeholderTextColor={ui.color.textMuted}
+      />
+      <PrimaryButton label="Send" onPress={send} disabled={!text.trim()} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6F4EE', padding: 12 },
-  empty: { color: '#4A4A4A', marginTop: 20 },
-  messageBubble: {
-    backgroundColor: '#FFFFFF',
-    padding: 10,
-    borderRadius: 12,
-    marginBottom: 8
+  container: {
+    flex: 1,
+    backgroundColor: ui.color.bg,
+    padding: ui.spacing.md
   },
-  time: { fontSize: 11, color: '#6A6A6A', marginTop: 6 },
-  input: {
+  topRule: {
+    height: 7,
+    backgroundColor: ui.color.topRule,
+    marginHorizontal: -ui.spacing.md,
+    marginBottom: ui.spacing.md
+  },
+  empty: {
+    color: ui.color.textSecondary,
+    marginTop: ui.spacing.lg,
+    fontSize: ui.type.body
+  },
+  listContent: {
+    paddingBottom: ui.spacing.sm
+  },
+  messageBubble: {
+    backgroundColor: ui.color.surface,
+    padding: ui.spacing.sm,
+    borderRadius: ui.radius.lg,
     borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
-    backgroundColor: '#FFFFFF'
+    borderColor: ui.color.border,
+    marginBottom: ui.spacing.xs,
+    ...ui.shadow.soft
+  },
+  messageText: {
+    color: ui.color.textPrimary,
+    fontSize: ui.type.body
+  },
+  time: {
+    fontSize: ui.type.tiny,
+    color: ui.color.textMuted,
+    marginTop: 6
+  },
+  input: {
+    height: ui.field.height,
+    borderWidth: 1,
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.lg,
+    paddingHorizontal: ui.field.paddingX,
+    marginTop: ui.spacing.xs,
+    marginBottom: ui.spacing.xs,
+    backgroundColor: ui.color.surface,
+    color: ui.color.textPrimary,
+    fontSize: ui.type.body,
+    ...ui.shadow.soft
   }
 });

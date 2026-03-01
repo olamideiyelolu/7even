@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-top: #e9eef4;
+  --bg-bottom: #d7dfe8;
+  --panel: #ffffff;
+  --panel-border: rgba(9, 30, 66, 0.08);
+  --text-primary: #0d1b2a;
+  --text-secondary: #4b5d70;
+  --field-bg: #f7f9fc;
+  --field-border: #d9e1ea;
+  --focus: #1f6feb;
+  --primary: #174ea6;
+  --primary-hover: #123c82;
+  --subtle-alert-bg: #fff5df;
+  --subtle-alert-border: #efd8a5;
+  --subtle-alert-text: #654e22;
+  --match-bg: #e9f7ee;
+  --match-border: #9dd7af;
+  --match-text: #1e5a33;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 12% 15%, rgba(23, 78, 166, 0.12), transparent 28%),
+    radial-gradient(circle at 88% 88%, rgba(35, 89, 66, 0.08), transparent 30%),
+    linear-gradient(165deg, var(--bg-top), var(--bg-bottom));
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 2vw, 42px);
+}
+
+.canvas {
+  width: min(100%, 3840px);
+  min-height: min(100%, 2160px);
+  display: grid;
+  place-items: center;
+}
+
+.card {
+  width: min(92vw, 560px);
+  border-radius: 20px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 34px 62px rgba(22, 36, 58, 0.12);
+  padding: clamp(24px, 3vw, 42px);
+}
+
+.brand {
+  font-size: clamp(17px, 1.1vw, 22px);
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #2c4766;
+  margin-bottom: 18px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(30px, 2.2vw, 46px);
+  line-height: 1.05;
+}
+
+.subtitle {
+  margin: 10px 0 24px;
+  color: var(--text-secondary);
+  font-size: clamp(15px, 1vw, 18px);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.field-label {
+  font-weight: 600;
+  color: #213347;
+  font-size: 0.94rem;
+}
+
+input {
+  width: 100%;
+  height: 50px;
+  border: 1px solid var(--field-border);
+  border-radius: 12px;
+  background: var(--field-bg);
+  color: var(--text-primary);
+  padding: 0 14px;
+  font: inherit;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(31, 111, 235, 0.15);
+}
+
+.info-bar {
+  margin-top: -2px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.info-bar.alert {
+  color: var(--subtle-alert-text);
+  border: 1px solid var(--subtle-alert-border);
+  background: var(--subtle-alert-bg);
+}
+
+.info-bar.match {
+  color: var(--match-text);
+  border: 1px solid var(--match-border);
+  background: var(--match-bg);
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn.primary {
+  color: #ffffff;
+  background: var(--primary);
+}
+
+.btn.primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn.ghost {
+  color: #274160;
+  border-color: #c7d4e0;
+  background: #f6f9fd;
+}
+
+.inline-link {
+  margin-top: 2px;
+  justify-self: end;
+  color: #2a4d77;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.inline-link:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 2500px) {
+  .card {
+    width: min(70vw, 760px);
+    border-radius: 24px;
+    padding: 52px;
+  }
+
+  input {
+    height: 58px;
+    font-size: 1.08rem;
+  }
+
+  .btn {
+    height: 58px;
+    font-size: 1.04rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    width: min(100%, 520px);
+    padding: 24px 18px;
+    border-radius: 16px;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+  }
+}

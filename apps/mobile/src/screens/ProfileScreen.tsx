@@ -4,25 +4,26 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import { MeResponse } from '../types/api';
+import { ui } from '../theme/ui';
 
 interface Props {
   onBack: () => void;
 }
+
 const CTA_OPTIONS = ['Red Line', 'Brown Line', 'Purple Line', 'Green Line', 'Blue Line', 'Orange Line', 'Metra', 'Bus', 'I Drive'] as const;
 const PRONOUN_OPTIONS = ['he/him', 'she/her', 'they/them', 'other'] as const;
+
 function normalizeCtaLine(value?: string): (typeof CTA_OPTIONS)[number] | '' {
   if (!value) return '';
   return (CTA_OPTIONS as readonly string[]).includes(value) ? (value as (typeof CTA_OPTIONS)[number]) : '';
 }
+
 function normalizePronouns(value?: string): (typeof PRONOUN_OPTIONS)[number] {
   if (!value) return 'other';
   return (PRONOUN_OPTIONS as readonly string[]).includes(value) ? (value as (typeof PRONOUN_OPTIONS)[number]) : 'other';
 }
-function formatSchoolYear(value?: string) {
-  if (!value) return 'Not set';
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-}
-function formatPronounsLabel(value?: string) {
+
+function formatLabel(value?: string) {
   if (!value) return 'Not set';
   if (value.includes('/')) {
     return value
@@ -38,9 +39,7 @@ export function ProfileScreen({ onBack }: Props) {
   const [profile, setProfile] = useState<MeResponse | null>(null);
   const [editing, setEditing] = useState(false);
   const [major, setMajor] = useState('');
-  const [schoolYear, setSchoolYear] = useState<'freshman' | 'sophomore' | 'junior' | 'senior' | 'graduate'>(
-    'freshman'
-  );
+  const [schoolYear, setSchoolYear] = useState<'freshman' | 'sophomore' | 'junior' | 'senior' | 'graduate'>('freshman');
   const [age, setAge] = useState('');
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
   const [ctaLine, setCtaLine] = useState<(typeof CTA_OPTIONS)[number] | ''>('');
@@ -66,13 +65,9 @@ export function ProfileScreen({ onBack }: Props) {
   const saveProfile = async () => {
     setStatusMessage(null);
     const parsedAge = Number(age);
-    if (!major.trim()) {
-      setStatusMessage('Please enter your major.');
-      return;
-    }
+    if (!major.trim()) return setStatusMessage('Please enter your major.');
     if (!Number.isInteger(parsedAge) || parsedAge < 18 || parsedAge > 99) {
-      setStatusMessage('Age must be a whole number from 18 to 99.');
-      return;
+      return setStatusMessage('Age must be a whole number from 18 to 99.');
     }
 
     try {
@@ -104,7 +99,9 @@ export function ProfileScreen({ onBack }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <PrimaryButton label="Back" onPress={onBack} />
+      <View style={styles.topRule} />
+      <PrimaryButton label="Back" variant="secondary" onPress={onBack} />
+
       <Text style={styles.title}>Your Profile</Text>
       {profile?.profilePhotoUrl ? (
         <Image source={{ uri: profile.profilePhotoUrl }} style={styles.avatar} />
@@ -113,15 +110,16 @@ export function ProfileScreen({ onBack }: Props) {
           <Text style={styles.avatarFallbackText}>No Photo</Text>
         </View>
       )}
+
       <View style={styles.card}>
         <Text style={styles.row}>Name: {profile?.fullName ?? 'Not set'}</Text>
         <Text style={styles.row}>School: {profile?.school ?? 'Not set'}</Text>
         {!editing ? (
           <>
             <Text style={styles.row}>Major: {profile?.major ?? 'Not set'}</Text>
-            <Text style={styles.row}>School Year: {formatSchoolYear(profile?.schoolYear)}</Text>
+            <Text style={styles.row}>School Year: {formatLabel(profile?.schoolYear)}</Text>
             <Text style={styles.row}>Age: {profile?.age ?? 'Not set'}</Text>
-            <Text style={styles.row}>Pronouns: {formatPronounsLabel(profile?.pronouns)}</Text>
+            <Text style={styles.row}>Pronouns: {formatLabel(profile?.pronouns)}</Text>
             <Text style={styles.row}>CTA Line: {profile?.ctaLine || 'Not set'}</Text>
           </>
         ) : (
@@ -129,48 +127,67 @@ export function ProfileScreen({ onBack }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Profile photo URL"
+              placeholderTextColor={ui.color.textMuted}
               autoCapitalize="none"
               value={profilePhotoUrl}
               onChangeText={setProfilePhotoUrl}
             />
-            <TextInput style={styles.input} placeholder="Major" value={major} onChangeText={setMajor} />
-            <Text style={styles.editLabel}>School Year</Text>
-            <View style={styles.yearWrap}>
-              {(['freshman', 'sophomore', 'junior', 'senior', 'graduate'] as const).map((year) => (
-                <PrimaryButton
-                  key={year}
-                  label={schoolYear === year ? `Selected: ${year[0].toUpperCase()}${year.slice(1)}` : `${year[0].toUpperCase()}${year.slice(1)}`}
-                  onPress={() => setSchoolYear(year)}
-                />
-              ))}
+            <TextInput
+              style={styles.input}
+              placeholder="Major"
+              placeholderTextColor={ui.color.textMuted}
+              value={major}
+              onChangeText={setMajor}
+            />
+            <Text style={styles.editLabel}>SCHOOL YEAR</Text>
+            <View style={styles.optionGrid}>
+              {(['freshman', 'sophomore', 'junior', 'senior', 'graduate'] as const).map((year) => {
+                const selected = schoolYear === year;
+                return (
+                  <Pressable
+                    key={year}
+                    style={[styles.chip, selected && styles.chipActive]}
+                    onPress={() => setSchoolYear(year)}
+                  >
+                    <Text style={selected ? styles.chipTextActive : styles.chipText}>{formatLabel(year)}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
-            <TextInput style={styles.input} placeholder="Age" keyboardType="numeric" value={age} onChangeText={setAge} />
-            <Text style={styles.editLabel}>Pronouns</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Age"
+              placeholderTextColor={ui.color.textMuted}
+              keyboardType="numeric"
+              value={age}
+              onChangeText={setAge}
+            />
+            <Text style={styles.editLabel}>PRONOUNS</Text>
             <View style={styles.optionGrid}>
               {PRONOUN_OPTIONS.map((option) => {
                 const selected = pronouns === option;
                 return (
                   <Pressable
                     key={option}
-                    style={[styles.optionChip, selected && styles.optionChipActive]}
+                    style={[styles.chip, selected && styles.chipActive]}
                     onPress={() => setPronouns(option)}
                   >
-                    <Text style={selected ? styles.optionTextActive : styles.optionText}>{formatPronounsLabel(option)}</Text>
+                    <Text style={selected ? styles.chipTextActive : styles.chipText}>{formatLabel(option)}</Text>
                   </Pressable>
                 );
               })}
             </View>
-            <Text style={styles.editLabel}>CTA Line</Text>
+            <Text style={styles.editLabel}>CTA LINE</Text>
             <View style={styles.optionGrid}>
               {CTA_OPTIONS.map((option) => {
                 const selected = ctaLine === option;
                 return (
                   <Pressable
                     key={option}
-                    style={[styles.optionChip, selected && styles.optionChipActive]}
+                    style={[styles.chip, selected && styles.chipActive]}
                     onPress={() => setCtaLine((prev) => (prev === option ? '' : option))}
                   >
-                    <Text style={selected ? styles.optionTextActive : styles.optionText}>{option}</Text>
+                    <Text style={selected ? styles.chipTextActive : styles.chipText}>{option}</Text>
                   </Pressable>
                 );
               })}
@@ -178,7 +195,9 @@ export function ProfileScreen({ onBack }: Props) {
           </>
         )}
       </View>
+
       {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
+
       {!editing ? (
         <PrimaryButton label="Edit Profile" onPress={() => setEditing(true)} />
       ) : (
@@ -186,6 +205,7 @@ export function ProfileScreen({ onBack }: Props) {
           <PrimaryButton label={saving ? 'Saving...' : 'Save Changes'} onPress={() => void saveProfile()} disabled={saving} />
           <PrimaryButton
             label="Cancel"
+            variant="secondary"
             onPress={() => {
               setEditing(false);
               setMajor(profile?.major ?? '');
@@ -206,83 +226,101 @@ export function ProfileScreen({ onBack }: Props) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#F6F4EE'
+    padding: ui.spacing.lg,
+    backgroundColor: ui.color.bg
+  },
+  topRule: {
+    height: 7,
+    backgroundColor: ui.color.topRule,
+    marginHorizontal: -ui.spacing.lg,
+    marginBottom: ui.spacing.lg
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#154734'
+    fontSize: ui.type.heading,
+    fontWeight: '800',
+    marginTop: ui.spacing.md,
+    marginBottom: ui.spacing.md,
+    color: ui.color.textPrimary
   },
   avatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    marginBottom: 16
+    marginBottom: ui.spacing.md,
+    borderWidth: 1,
+    borderColor: ui.color.border
   },
   avatarFallback: {
-    backgroundColor: '#D6DBD4',
+    backgroundColor: ui.color.surface,
     alignItems: 'center',
     justifyContent: 'center'
   },
   avatarFallbackText: {
-    color: '#4A4A4A',
+    color: ui.color.textMuted,
     fontWeight: '600'
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    gap: 10
+    backgroundColor: ui.color.surface,
+    borderRadius: ui.radius.lg,
+    borderWidth: 1,
+    borderColor: ui.color.border,
+    padding: ui.spacing.md,
+    gap: 10,
+    ...ui.shadow.soft
   },
   row: {
-    color: '#1E2E27',
-    fontSize: 16
+    color: ui.color.textPrimary,
+    fontSize: ui.type.body
   },
   input: {
+    height: ui.field.height,
     borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#FFFFFF'
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.lg,
+    paddingHorizontal: ui.field.paddingX,
+    backgroundColor: ui.color.card,
+    color: ui.color.textPrimary,
+    fontSize: ui.type.body
   },
   editLabel: {
-    color: '#4A4A4A',
-    marginTop: 6
-  },
-  yearWrap: {
-    marginBottom: 8
+    color: ui.color.accent,
+    fontSize: ui.type.small,
+    letterSpacing: 2,
+    marginTop: 6,
+    fontWeight: '700'
   },
   optionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8
+    gap: ui.spacing.xs,
+    marginBottom: ui.spacing.xs
   },
-  optionChip: {
+  chip: {
     borderWidth: 1,
-    borderColor: '#B6B6B6',
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: '#FFFFFF'
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.pill,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: ui.color.card
   },
-  optionChipActive: {
-    backgroundColor: '#E8F0EC',
-    borderColor: '#154734'
+  chipActive: {
+    backgroundColor: '#FBE7E4',
+    borderColor: ui.color.primary
   },
-  optionText: {
-    color: '#2E2E2E'
+  chipText: {
+    color: ui.color.textSecondary,
+    fontSize: 13,
+    fontWeight: '600'
   },
-  optionTextActive: {
-    color: '#154734',
+  chipTextActive: {
+    color: ui.color.primary,
+    fontSize: 13,
     fontWeight: '700'
   },
   status: {
-    marginTop: 12,
-    marginBottom: 8,
-    color: '#154734',
+    marginTop: ui.spacing.sm,
+    marginBottom: ui.spacing.xs,
+    color: ui.color.successText,
     fontWeight: '600'
   }
 });

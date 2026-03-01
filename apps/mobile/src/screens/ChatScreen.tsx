@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
+import { API_ORIGIN } from '../config/network';
 import type { RootStackParamList } from '../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
@@ -23,7 +24,7 @@ export function ChatScreen({ route }: Props) {
 
   const socket = useMemo(() => {
     if (!accessToken) return null;
-    return io('http://localhost:4000', {
+    return io(API_ORIGIN, {
       transports: ['websocket'],
       auth: { token: accessToken }
     });

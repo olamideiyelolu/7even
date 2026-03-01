@@ -23,7 +23,7 @@ class SuggestionItem {
 
 @Schema({ timestamps: true, collection: 'suggestions' })
 export class Suggestion {
-  @Prop({ type: Types.ObjectId, required: true, index: true })
+  @Prop({ type: Types.ObjectId, required: true })
   matchId!: Types.ObjectId;
 
   @Prop({ type: [SuggestionItem], default: [] })

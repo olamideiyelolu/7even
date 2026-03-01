@@ -106,25 +106,25 @@ const styles = StyleSheet.create({
   },
   topRule: {
     marginTop: ui.spacing.xs,
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.lg
   },
   headerBlock: {
     alignItems: 'center',
-    marginTop: 72,
-    marginBottom: 42
+    marginTop: 56,
+    marginBottom: 28
   },
   kicker: {
     color: ui.color.primary,
     fontSize: 14,
-    letterSpacing: 3.4,
-    fontWeight: '700'
+    fontWeight: '700',
+    textTransform: 'uppercase'
   },
   logo: {
     marginTop: ui.spacing.sm,
     color: ui.color.textPrimary,
-    fontSize: 66,
+    fontSize: 56,
     fontWeight: '800'
   },
   formBlock: { gap: 9 },
@@ -132,7 +132,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: ui.color.accent,
     fontSize: ui.type.small,
-    letterSpacing: 2.6,
     fontWeight: '700'
   },
   input: {
@@ -143,7 +142,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ui.field.paddingX,
     backgroundColor: ui.color.surface,
     color: ui.color.textPrimary,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     ...ui.shadow.soft
   },
@@ -165,14 +164,14 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   footerBlock: {
-    marginTop: 34,
+    marginTop: 24,
     alignItems: 'center',
     gap: 18
   },
   primaryButton: {
     width: '100%',
     height: ui.button.height,
-    borderRadius: 17,
+    borderRadius: ui.radius.lg,
     backgroundColor: ui.color.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,13 +180,11 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
-    letterSpacing: ui.button.letterSpacing,
     fontWeight: '800'
   },
   footerText: {
     color: ui.color.textMuted,
-    fontSize: ui.type.tiny,
-    letterSpacing: 2.4,
+    fontSize: 12,
     fontWeight: '700'
   }
 });

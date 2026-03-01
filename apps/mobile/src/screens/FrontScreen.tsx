@@ -13,7 +13,6 @@ export function FrontScreen({ navigation }: Props) {
       <View style={styles.topRule} />
       <View style={styles.hero}>
         <Text style={styles.logo}>7even</Text>
-        <Text style={styles.tagline}>THE SCHOLASTIC DATE ENGINE</Text>
       </View>
 
       <View style={styles.actions}>
@@ -37,7 +36,7 @@ const styles = StyleSheet.create({
   },
   topRule: {
     marginTop: ui.spacing.xs,
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.lg
   },
@@ -48,15 +47,14 @@ const styles = StyleSheet.create({
   },
   logo: {
     color: ui.color.textPrimary,
-    fontSize: 72,
+    fontSize: 64,
     fontWeight: '800'
   },
   tagline: {
     color: ui.color.accent,
-    marginTop: 8,
-    letterSpacing: 2.8,
-    fontSize: 12,
-    fontWeight: '700'
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: '600'
   },
   actions: {
     paddingBottom: ui.spacing.xxl
@@ -80,13 +78,11 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
-    letterSpacing: ui.button.letterSpacing,
     fontWeight: '800'
   },
   secondaryButtonText: {
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
-    letterSpacing: ui.button.letterSpacing,
-    fontWeight: '800'
+    fontWeight: '700'
   }
 });

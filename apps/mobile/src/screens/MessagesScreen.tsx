@@ -105,10 +105,10 @@ const styles = StyleSheet.create({
     padding: ui.spacing.md
   },
   topRule: {
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.md,
-    marginBottom: ui.spacing.md
+    marginBottom: ui.spacing.sm
   },
   empty: {
     color: ui.color.textSecondary,
@@ -117,17 +117,19 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: ui.color.accent,
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '800',
-    marginBottom: ui.spacing.sm
+    marginBottom: ui.spacing.md
   },
   listContent: {
-    paddingBottom: ui.spacing.sm
+    paddingBottom: ui.spacing.sm,
+    gap: 8
   },
   messageBubble: {
     backgroundColor: ui.color.surface,
-    padding: ui.spacing.sm,
-    borderRadius: ui.radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: ui.color.border,
     marginBottom: ui.spacing.xs,
@@ -135,24 +137,25 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: ui.color.textPrimary,
-    fontSize: ui.type.body
+    fontSize: 15,
+    lineHeight: 20
   },
   time: {
-    fontSize: ui.type.tiny,
+    fontSize: 11,
     color: ui.color.textMuted,
-    marginTop: 6
+    marginTop: 4
   },
   input: {
     height: ui.field.height,
     borderWidth: 1,
     borderColor: ui.color.border,
-    borderRadius: ui.radius.lg,
+    borderRadius: ui.radius.xl,
     paddingHorizontal: ui.field.paddingX,
-    marginTop: ui.spacing.xs,
+    marginTop: ui.spacing.sm,
     marginBottom: ui.spacing.xs,
-    backgroundColor: ui.color.surface,
+    backgroundColor: ui.color.card,
     color: ui.color.textPrimary,
-    fontSize: ui.type.body,
+    fontSize: 15,
     ...ui.shadow.soft
   }
 });

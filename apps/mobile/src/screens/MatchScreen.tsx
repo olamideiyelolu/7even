@@ -217,38 +217,43 @@ const styles = StyleSheet.create({
     backgroundColor: ui.color.bg
   },
   topRule: {
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule
   },
   header: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 14,
     marginBottom: 4,
-    minHeight: 72,
+    minHeight: 68,
     position: 'relative'
   },
   profileButton: {
     position: 'absolute',
     right: 18,
-    top: 0
+    top: 0,
+    backgroundColor: ui.color.surface,
+    borderWidth: 1,
+    borderColor: ui.color.border,
+    borderRadius: ui.radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 7
   },
   logo: {
     color: ui.color.textPrimary,
-    fontSize: 56,
+    fontSize: 46,
     fontWeight: '800'
   },
   link: {
-    marginTop: 6,
     color: ui.color.accent,
-    letterSpacing: 2,
+    fontSize: 12,
     fontWeight: '700'
   },
   countdownCircle: {
     width: 190,
     height: 190,
     borderRadius: 95,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: ui.color.border,
     backgroundColor: ui.color.surface,
     alignItems: 'center',
@@ -264,13 +269,12 @@ const styles = StyleSheet.create({
   countdownLabel: {
     marginTop: 4,
     color: ui.color.accent,
-    letterSpacing: 2.7,
-    fontSize: 14,
-    fontWeight: '800'
+    fontSize: 13,
+    fontWeight: '700'
   },
   content: {
     paddingHorizontal: 18,
-    paddingBottom: 24,
+    paddingBottom: 8,
     gap: 18
   },
   statusCard: {
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ui.color.border,
     backgroundColor: ui.color.surface,
-    paddingVertical: 26,
+    paddingVertical: 22,
     paddingHorizontal: ui.spacing.lg,
     alignItems: 'center',
     ...ui.shadow.soft
@@ -289,20 +293,19 @@ const styles = StyleSheet.create({
   },
   statusTitle: {
     color: ui.color.accent,
-    letterSpacing: 2,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     textAlign: 'center'
   },
   statusBody: {
     marginTop: 14,
     color: ui.color.textMuted,
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 24
+    lineHeight: 22
   },
   primaryAction: {
-    marginTop: 20,
+    marginTop: 16,
     width: '100%',
     height: ui.button.height,
     borderRadius: ui.radius.lg,
@@ -314,11 +317,11 @@ const styles = StyleSheet.create({
   primaryActionText: {
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
-    letterSpacing: ui.button.letterSpacing,
+    letterSpacing: 0.2,
     fontWeight: '800'
   },
   matchCard: {
-    marginTop: 18,
+    marginTop: 14,
     width: '100%',
     borderRadius: ui.radius.md,
     borderWidth: 1,
@@ -326,20 +329,20 @@ const styles = StyleSheet.create({
     backgroundColor: ui.color.card,
     padding: 14,
     alignItems: 'center',
-    gap: 4
+    gap: 6
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     borderWidth: 1,
     borderColor: ui.color.border,
     marginBottom: 8
   },
   avatarFallback: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     borderWidth: 1,
     borderColor: ui.color.border,
     backgroundColor: ui.color.surface,
@@ -349,23 +352,23 @@ const styles = StyleSheet.create({
   },
   avatarInitial: {
     color: ui.color.accent,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800'
   },
   matchName: {
     color: ui.color.textPrimary,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
     textAlign: 'center'
   },
   matchMeta: {
     color: ui.color.textMuted,
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center'
   },
   matchHint: {
     color: ui.color.accent,
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 6,
     fontWeight: '700'
   },
@@ -428,8 +431,7 @@ const styles = StyleSheet.create({
   logoutText: {
     textAlign: 'center',
     color: ui.color.textMuted,
-    fontSize: ui.type.tiny,
-    letterSpacing: 2.2,
-    fontWeight: '700'
-  }
+    fontSize: 12,
+    fontWeight: '600'
+  },
 });

@@ -67,7 +67,6 @@ const styles = StyleSheet.create({
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
     letterSpacing: ui.button.letterSpacing,
-    textTransform: 'uppercase',
     fontWeight: '800'
   },
   textSecondary: {

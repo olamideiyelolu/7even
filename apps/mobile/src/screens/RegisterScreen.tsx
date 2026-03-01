@@ -231,25 +231,25 @@ const styles = StyleSheet.create({
   },
   topRule: {
     marginTop: ui.spacing.xs,
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.lg,
-    marginBottom: 22
+    marginBottom: 18
   },
   headerBlock: {
     alignItems: 'center',
-    marginBottom: 22
+    marginBottom: 16
   },
   kicker: {
     color: ui.color.primary,
     fontSize: 14,
-    letterSpacing: 3.4,
-    fontWeight: '700'
+    fontWeight: '700',
+    textTransform: 'uppercase'
   },
   logo: {
     marginTop: ui.spacing.sm,
     color: ui.color.textPrimary,
-    fontSize: 58,
+    fontSize: 52,
     fontWeight: '800'
   },
   formBlock: { gap: 8 },
@@ -257,7 +257,6 @@ const styles = StyleSheet.create({
     marginTop: 9,
     color: ui.color.accent,
     fontSize: ui.type.small,
-    letterSpacing: 2.4,
     fontWeight: '700'
   },
   input: {
@@ -268,7 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ui.field.paddingX,
     backgroundColor: ui.color.surface,
     color: ui.color.textPrimary,
-    fontSize: ui.type.body,
+    fontSize: 16,
     fontWeight: '600',
     ...ui.shadow.soft
   },
@@ -290,15 +289,15 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   footerBlock: {
-    marginTop: 26,
+    marginTop: 20,
     alignItems: 'center',
-    gap: 18,
+    gap: 16,
     paddingBottom: 22
   },
   primaryButton: {
     width: '100%',
     height: ui.button.height,
-    borderRadius: 17,
+    borderRadius: ui.radius.lg,
     backgroundColor: ui.color.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -307,13 +306,11 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: ui.color.textOnPrimary,
     fontSize: ui.button.textSize,
-    letterSpacing: ui.button.letterSpacing,
     fontWeight: '800'
   },
   footerText: {
     color: ui.color.textMuted,
-    fontSize: ui.type.tiny,
-    letterSpacing: 2.2,
+    fontSize: 12,
     fontWeight: '700'
   },
   chipRow: {
@@ -324,20 +321,19 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: ui.radius.lg,
+    borderRadius: ui.radius.pill,
     borderWidth: 1,
     borderColor: ui.color.border,
     backgroundColor: ui.color.surface,
     ...ui.shadow.soft
   },
   chipActive: {
-    backgroundColor: ui.color.primary,
+    backgroundColor: '#FBE7E4',
     borderColor: ui.color.primary
   },
   chipText: {
-    color: ui.color.textMuted,
+    color: ui.color.textSecondary,
     fontSize: ui.type.small,
-    letterSpacing: 1.8,
     fontWeight: '700'
   },
   chipTextActive: {

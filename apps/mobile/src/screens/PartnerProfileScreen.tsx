@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     backgroundColor: ui.color.bg
   },
   topRule: {
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule,
     marginHorizontal: -ui.spacing.lg,
     marginBottom: ui.spacing.lg
@@ -84,9 +84,9 @@ const styles = StyleSheet.create({
     color: ui.color.textPrimary
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     marginBottom: ui.spacing.md,
     borderWidth: 1,
     borderColor: ui.color.border

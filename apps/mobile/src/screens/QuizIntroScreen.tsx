@@ -83,12 +83,12 @@ const styles = StyleSheet.create({
     top: ui.spacing.xs,
     left: 0,
     right: 0,
-    height: 7,
+    height: 4,
     backgroundColor: ui.color.topRule
   },
   kicker: {
     color: ui.color.primary,
-    letterSpacing: 3,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: ui.spacing.sm
   },
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: ui.type.body,
-    lineHeight: 26,
+    lineHeight: 24,
     color: ui.color.textSecondary,
     marginBottom: ui.spacing.lg
   },

@@ -57,27 +57,29 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    height: 68,
-    borderTopWidth: 2,
-    borderTopColor: ui.color.borderStrong,
-    backgroundColor: ui.color.bg
+    height: 78,
+    borderTopWidth: 1,
+    borderTopColor: ui.color.border,
+    backgroundColor: ui.color.surface,
+    paddingBottom: 10
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    marginTop: 4
   },
   tabDivider: {
     borderLeftWidth: 1,
-    borderLeftColor: ui.color.borderStrong
+    borderLeftColor: ui.color.border
   },
   tabText: {
     color: ui.color.textMuted,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.6
+    fontSize: 14,
+    fontWeight: '700'
   },
   tabTextActive: {
-    color: ui.color.accent
+    color: ui.color.accent,
+    fontWeight: '800'
   }
 });

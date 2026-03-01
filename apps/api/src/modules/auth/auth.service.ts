@@ -34,7 +34,7 @@ const SCHOOL_BY_EMAIL_DOMAIN: Array<{ school: string; domains: string[] }> = [
 const LOOKING_FOR_TO_PREFERRED_GENDERS: Record<string, string[]> = {
   men: ['male'],
   women: ['female'],
-  'non-binary': ['non-binary'],
+  'non-binary': ['non-binary', 'other'],
   all: ['male', 'female', 'non-binary', 'other']
 };
 

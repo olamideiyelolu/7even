@@ -5,14 +5,32 @@ export type SuggestionDocument = HydratedDocument<Suggestion>;
 
 @Schema({ _id: false })
 class SuggestionItem {
-  @Prop({ type: Types.ObjectId, required: true })
-  venueEventId!: Types.ObjectId;
+  @Prop({ type: Types.ObjectId })
+  venueEventId?: Types.ObjectId;
 
   @Prop({ required: true })
   name!: string;
 
   @Prop({ required: true, enum: ['restaurant', 'event'] })
   type!: 'restaurant' | 'event';
+
+  @Prop()
+  eventUrl?: string;
+
+  @Prop()
+  startsAt?: Date;
+
+  @Prop()
+  venueName?: string;
+
+  @Prop()
+  locationLabel?: string;
+
+  @Prop()
+  priceLabel?: string;
+
+  @Prop({ required: true, enum: ['eventbrite', 'catalog'], default: 'catalog' })
+  source!: 'eventbrite' | 'catalog';
 
   @Prop({ type: [String], default: [] })
   matchedTags!: string[];

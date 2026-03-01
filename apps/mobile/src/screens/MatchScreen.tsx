@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
-import { MatchResponse } from '../types/api';
+import { MatchResponse, SuggestionItemResponse, SuggestionResponse } from '../types/api';
 import { ui } from '../theme/ui';
 
 interface Props {
@@ -16,16 +16,46 @@ export function MatchScreen({ onProfilePress, onMessagesPress, onMatchProfilePre
   const { accessToken, logout } = useAuth();
   const [match, setMatch] = useState<MatchResponse | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [suggestions, setSuggestions] = useState<SuggestionItemResponse[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [suggestedOnce, setSuggestedOnce] = useState(false);
 
   const load = useCallback(async () => {
     if (!accessToken) return;
     try {
       const current = await apiRequest<MatchResponse | null>('/matches/current', undefined, accessToken);
       setMatch(current);
+      setSuggestionError(null);
+      if (!current) {
+        setSuggestions([]);
+        setSuggestedOnce(false);
+      }
     } catch {
       setMatch(null);
     }
   }, [accessToken]);
+
+  const loadSuggestions = useCallback(async () => {
+    if (!accessToken || !match?._id) return;
+    setSuggesting(true);
+    setSuggestionError(null);
+    setSuggestedOnce(true);
+    try {
+      const result = await apiRequest<SuggestionResponse | null>(
+        `/matches/${match._id}/suggestions`,
+        undefined,
+        accessToken
+      );
+      setSuggestions(result?.items ?? []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load date ideas.';
+      setSuggestionError(message || 'Failed to load date ideas.');
+      setSuggestions([]);
+    } finally {
+      setSuggesting(false);
+    }
+  }, [accessToken, match?._id]);
 
   useEffect(() => {
     void load();
@@ -97,7 +127,7 @@ export function MatchScreen({ onProfilePress, onMessagesPress, onMatchProfilePre
         <Text style={styles.logo}>7even</Text>
       </View>
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.statusCard}>
           {!!match?.matchedWith ? (
             <>
@@ -121,6 +151,35 @@ export function MatchScreen({ onProfilePress, onMessagesPress, onMatchProfilePre
               <Pressable style={styles.primaryAction} onPress={onMessagesPress}>
                 <Text style={styles.primaryActionText}>OPEN CHAT</Text>
               </Pressable>
+
+              <View style={styles.suggestionSection}>
+                <Text style={styles.suggestionTitle}>DATE IDEA</Text>
+                <Pressable style={styles.secondaryAction} onPress={loadSuggestions} disabled={suggesting}>
+                  <Text style={styles.secondaryActionText}>
+                    {suggesting ? 'LOADING IDEAS...' : 'SUGGEST DATE IDEAS'}
+                  </Text>
+                </Pressable>
+                {!!suggestionError && <Text style={styles.errorText}>{suggestionError}</Text>}
+                {suggestedOnce && !suggesting && suggestions.length === 0 && !suggestionError && (
+                  <Text style={styles.emptyText}>No Chicago events found for this week. Try again soon.</Text>
+                )}
+                {suggestions.map((suggestion, index) => (
+                  <View key={`${suggestion.venueEventId ?? suggestion.name}-${index}`} style={styles.suggestionRow}>
+                    <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                    <Text style={styles.suggestionMeta}>
+                      {suggestion.locationLabel ?? suggestion.venueName ?? 'Chicago'}
+                    </Text>
+                    <Text style={styles.suggestionMeta}>
+                      {suggestion.startsAt
+                        ? new Date(suggestion.startsAt).toLocaleString()
+                        : suggestion.priceLabel ?? 'This week'}
+                    </Text>
+                    <Text style={styles.suggestionMeta}>
+                      {(suggestion.priceLabel ?? 'Varies') + ` · ${suggestion.source.toUpperCase()}`}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </>
           ) : sundayCountdown ? (
             <>
@@ -147,8 +206,7 @@ export function MatchScreen({ onProfilePress, onMessagesPress, onMatchProfilePre
         <Pressable onPress={logout}>
           <Text style={styles.logoutText}>LOG OUT</Text>
         </Pressable>
-      </View>
-
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -211,10 +269,8 @@ const styles = StyleSheet.create({
     fontWeight: '800'
   },
   content: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 18,
-    paddingBottom: 12,
+    paddingBottom: 24,
     gap: 18
   },
   statusCard: {
@@ -313,11 +369,67 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontWeight: '700'
   },
+  suggestionSection: {
+    marginTop: 20,
+    width: '100%',
+    borderTopWidth: 1,
+    borderTopColor: ui.color.border,
+    paddingTop: 14,
+    gap: 10
+  },
+  suggestionTitle: {
+    color: ui.color.accent,
+    fontSize: 13,
+    letterSpacing: 2.2,
+    fontWeight: '800'
+  },
+  suggestionRow: {
+    borderRadius: ui.radius.md,
+    borderWidth: 1,
+    borderColor: ui.color.border,
+    backgroundColor: ui.color.card,
+    padding: 10
+  },
+  suggestionName: {
+    color: ui.color.accent,
+    fontSize: 14,
+    fontWeight: '700'
+  },
+  suggestionMeta: {
+    marginTop: 2,
+    color: '#8C8578',
+    fontSize: 13
+  },
+  secondaryAction: {
+    marginTop: 2,
+    width: '100%',
+    height: 42,
+    borderRadius: ui.radius.md,
+    borderWidth: 1,
+    borderColor: ui.color.border,
+    backgroundColor: ui.color.card,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  secondaryActionText: {
+    color: ui.color.accent,
+    letterSpacing: 1.4,
+    fontWeight: '800',
+    fontSize: 13
+  },
+  errorText: {
+    color: '#AE3B3B',
+    fontSize: 13
+  },
+  emptyText: {
+    color: ui.color.textMuted,
+    fontSize: 13
+  },
   logoutText: {
     textAlign: 'center',
     color: ui.color.textMuted,
     fontSize: ui.type.tiny,
     letterSpacing: 2.2,
     fontWeight: '700'
-  },
+  }
 });

@@ -63,6 +63,28 @@ export interface PartnerProfileResponse {
   profilePhotoUrl?: string;
 }
 
+export interface SuggestionItemResponse {
+  venueEventId?: string;
+  name: string;
+  type: 'restaurant' | 'event';
+  matchedTags: string[];
+  score: number;
+  eventUrl?: string;
+  startsAt?: string;
+  venueName?: string;
+  locationLabel?: string;
+  priceLabel?: string;
+  source: 'eventbrite' | 'catalog';
+}
+
+export interface SuggestionResponse {
+  _id: string;
+  matchId: string;
+  items: SuggestionItemResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface QuizQuestionResponse {
   id: string;
   prompt: string;

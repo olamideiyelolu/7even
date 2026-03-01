@@ -8,7 +8,7 @@ class QuizAnswer {
   @Prop({ required: true })
   questionId!: string;
 
-  @Prop({ required: true, min: 1, max: 5 })
+  @Prop({ required: true, min: 0, max: 6 })
   value!: number;
 }
 
@@ -22,6 +22,9 @@ export class QuizSubmission {
 
   @Prop({ type: [String], default: [] })
   interests!: string[];
+
+  @Prop({ type: [String], default: [] })
+  valueSortTop!: string[];
 }
 
 export const QuizSubmissionSchema = SchemaFactory.createForClass(QuizSubmission);

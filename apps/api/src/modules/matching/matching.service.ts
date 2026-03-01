@@ -267,13 +267,28 @@ export class MatchingService {
     interestsB: string[]
   ) {
     const allKeys = Array.from(new Set([...Object.keys(traitsA), ...Object.keys(traitsB)]));
+    const maxDiffByTrait: Record<string, number> = {
+      openness: 4,
+      conscientiousness: 4,
+      extraversion: 4,
+      agreeableness: 4,
+      neuroticism: 4,
+      care: 6,
+      fairness: 6,
+      liberty: 6,
+      loyalty: 6,
+      authority: 6,
+      sanctity: 6
+    };
 
     let personalityDistance = 0;
+    let maxPossibleDistance = 0;
     for (const key of allKeys) {
       personalityDistance += Math.abs((traitsA[key] ?? 3) - (traitsB[key] ?? 3));
+      maxPossibleDistance += maxDiffByTrait[key] ?? 4;
     }
 
-    const personality = Math.max(0, 1 - personalityDistance / Math.max(1, allKeys.length * 4));
+    const personality = Math.max(0, 1 - personalityDistance / Math.max(1, maxPossibleDistance));
 
     const setA = new Set(interestsA);
     const setB = new Set(interestsB);

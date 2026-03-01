@@ -14,6 +14,9 @@ export class CompatibilityVector {
   @Prop({ type: [String], default: [] })
   interests!: string[];
 
+  @Prop({ type: [String], default: [] })
+  valueSortTop!: string[];
+
   @Prop({ required: true, default: 1 })
   version!: number;
 }

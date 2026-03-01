@@ -1,5 +1,7 @@
 import {
+  ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsInt,
   IsString,
@@ -14,14 +16,15 @@ class QuizAnswerDto {
   questionId!: string;
 
   @IsInt()
-  @Min(1)
-  @Max(5)
+  @Min(0)
+  @Max(6)
   value!: number;
 }
 
 export class SubmitQuizDto {
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayUnique((answer: QuizAnswerDto) => answer.questionId)
   @ValidateNested({ each: true })
   @Type(() => QuizAnswerDto)
   answers!: QuizAnswerDto[];
@@ -29,4 +32,11 @@ export class SubmitQuizDto {
   @IsArray()
   @IsString({ each: true })
   interests!: string[];
+
+  @IsArray()
+  @ArrayMinSize(10)
+  @ArrayMaxSize(10)
+  @ArrayUnique()
+  @IsString({ each: true })
+  valueSortTop!: string[];
 }

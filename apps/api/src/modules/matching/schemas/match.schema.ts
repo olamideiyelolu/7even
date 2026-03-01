@@ -12,10 +12,13 @@ class ScoreBreakdown {
   personality!: number;
 
   @Prop({ required: true })
-  interests!: number;
+  morality!: number;
 
   @Prop({ required: true })
-  unmatchedBoost!: number;
+  values!: number;
+
+  @Prop({ required: true })
+  top3Bonus!: number;
 
   @Prop()
   aiRerank?: number;

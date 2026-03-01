@@ -26,8 +26,9 @@ interface PairCandidate {
   score: {
     total: number;
     personality: number;
-    interests: number;
-    unmatchedBoost: number;
+    morality: number;
+    values: number;
+    top3Bonus: number;
     aiRerank?: number;
   };
 }
@@ -81,8 +82,8 @@ export class MatchingService {
           userB,
           vectorByUser.get(userA.id)?.traits ?? {},
           vectorByUser.get(userB.id)?.traits ?? {},
-          vectorByUser.get(userA.id)?.interests ?? userA.interests,
-          vectorByUser.get(userB.id)?.interests ?? userB.interests
+          vectorByUser.get(userA.id)?.valueSortTop ?? [],
+          vectorByUser.get(userB.id)?.valueSortTop ?? []
         );
 
         candidates.push({ userA, userB, score });
@@ -290,47 +291,54 @@ export class MatchingService {
     userB: UserDocument,
     traitsA: Record<string, number>,
     traitsB: Record<string, number>,
-    interestsA: string[],
-    interestsB: string[]
+    valuesA: string[],
+    valuesB: string[]
   ) {
-    const allKeys = Array.from(new Set([...Object.keys(traitsA), ...Object.keys(traitsB)]));
-    const maxDiffByTrait: Record<string, number> = {
-      openness: 4,
-      conscientiousness: 4,
-      extraversion: 4,
-      agreeableness: 4,
-      neuroticism: 4,
-      care: 6,
-      fairness: 6,
-      liberty: 6,
-      loyalty: 6,
-      authority: 6,
-      sanctity: 6
-    };
+    const personalityKeys = [
+      'openness',
+      'conscientiousness',
+      'extraversion',
+      'agreeableness',
+      'neuroticism'
+    ] as const;
+    const moralKeys = [
+      'care',
+      'fairness',
+      'liberty',
+      'loyalty',
+      'authority',
+      'sanctity'
+    ] as const;
 
-    let personalityDistance = 0;
-    let maxPossibleDistance = 0;
-    for (const key of allKeys) {
-      personalityDistance += Math.abs((traitsA[key] ?? 3) - (traitsB[key] ?? 3));
-      maxPossibleDistance += maxDiffByTrait[key] ?? 4;
-    }
+    const personality = this.calculateTraitSimilarity(
+      personalityKeys as unknown as string[],
+      traitsA,
+      traitsB,
+      4,
+      3
+    );
+    const morality = this.calculateTraitSimilarity(
+      moralKeys as unknown as string[],
+      traitsA,
+      traitsB,
+      6,
+      3
+    );
 
-    const personality = Math.max(0, 1 - personalityDistance / Math.max(1, maxPossibleDistance));
+    const overlap = this.intersectionCount(valuesA, valuesB);
+    const valueOverlap = overlap / 10;
+    const top3RankMatches = this.countTop3RankMatches(valuesA, valuesB);
+    const top3Bonus = top3RankMatches > 0 ? 0.1 : 0;
+    const values = Math.min(1, valueOverlap + top3Bonus);
 
-    const setA = new Set(interestsA);
-    const setB = new Set(interestsB);
-    const overlap = [...setA].filter((tag) => setB.has(tag)).length;
-    const union = new Set([...setA, ...setB]).size;
-    const interests = union === 0 ? 0 : overlap / union;
-
-    const unmatchedBoost = Math.min(0.2, (userA.unmatchedStreak + userB.unmatchedStreak) * 0.02);
-    const total = Number((personality * 0.55 + interests * 0.35 + unmatchedBoost * 0.1).toFixed(4));
+    const total = Number((personality * 0.4 + morality * 0.4 + values * 0.2).toFixed(4));
 
     return {
       total,
       personality: Number(personality.toFixed(4)),
-      interests: Number(interests.toFixed(4)),
-      unmatchedBoost: Number(unmatchedBoost.toFixed(4))
+      morality: Number(morality.toFixed(4)),
+      values: Number(values.toFixed(4)),
+      top3Bonus: Number(top3Bonus.toFixed(4))
     };
   }
 
@@ -345,7 +353,7 @@ export class MatchingService {
 
   private async maybeRerankWithAI(
     candidates: PairCandidate[],
-    vectorByUser: Map<string, { traits?: Record<string, number>; interests?: string[]; valueSortTop?: string[] }>
+    vectorByUser: Map<string, { traits?: Record<string, number>; valueSortTop?: string[] }>
   ) {
     const enabled = this.config.get<string>('MATCH_AI_ENABLED', 'false') === 'true';
     const apiKey = this.config.get<string>('MATCH_AI_API_KEY', '');
@@ -367,14 +375,12 @@ export class MatchingService {
             age: candidate.userA.age,
             school: candidate.userA.school,
             major: (candidate.userA as UserDocument & { major?: string }).major ?? '',
-            interests: vectorByUser.get(candidate.userA.id)?.interests ?? candidate.userA.interests ?? [],
             valuesTop10: vectorByUser.get(candidate.userA.id)?.valueSortTop ?? []
           },
           userB: {
             age: candidate.userB.age,
             school: candidate.userB.school,
             major: (candidate.userB as UserDocument & { major?: string }).major ?? '',
-            interests: vectorByUser.get(candidate.userB.id)?.interests ?? candidate.userB.interests ?? [],
             valuesTop10: vectorByUser.get(candidate.userB.id)?.valueSortTop ?? []
           },
           deterministic: candidate.score,
@@ -498,5 +504,35 @@ export class MatchingService {
 
   private normalizePreferredGenderValues(values: string[]) {
     return values.map((value) => this.normalizeGenderValue(value));
+  }
+
+  private calculateTraitSimilarity(
+    keys: string[],
+    traitsA: Record<string, number>,
+    traitsB: Record<string, number>,
+    maxDiffPerTrait: number,
+    neutralValue: number
+  ) {
+    let distance = 0;
+    for (const key of keys) {
+      distance += Math.abs((traitsA[key] ?? neutralValue) - (traitsB[key] ?? neutralValue));
+    }
+    const maxDistance = keys.length * maxDiffPerTrait;
+    if (maxDistance <= 0) return 0;
+    return Math.max(0, 1 - distance / maxDistance);
+  }
+
+  private intersectionCount(listA: string[], listB: string[]) {
+    const setB = new Set(listB);
+    return [...new Set(listA)].filter((value) => setB.has(value)).length;
+  }
+
+  private countTop3RankMatches(listA: string[], listB: string[]) {
+    let matches = 0;
+    for (let i = 0; i < 3; i += 1) {
+      if (!listA[i] || !listB[i]) continue;
+      if (listA[i] === listB[i]) matches += 1;
+    }
+    return matches;
   }
 }

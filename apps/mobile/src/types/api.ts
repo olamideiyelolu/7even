@@ -44,8 +44,9 @@ export interface MatchResponse {
   score?: {
     total: number;
     personality: number;
-    interests: number;
-    unmatchedBoost: number;
+    morality: number;
+    values: number;
+    top3Bonus: number;
     aiRerank?: number;
   };
 }

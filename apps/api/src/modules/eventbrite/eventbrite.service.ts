@@ -64,34 +64,18 @@ export class EventbriteService {
     const city = (options.city ?? this.config.get<string>('EVENTBRITE_CITY', 'Chicago')).toLowerCase();
     const from = options.from ?? dayjs().tz(timezoneName).startOf('day').toDate();
     const to = options.to ?? dayjs(from).tz(timezoneName).add(14, 'day').endOf('day').toDate();
-    const orgIds = this.config
-      .get<string>('EVENTBRITE_ORGANIZATION_IDS', '')
-      .split(',')
-      .map((id) => id.trim())
-      .filter(Boolean);
-
     let inserted = 0;
     let updated = 0;
     const seenIds = new Set<string>();
 
-    const allRawEvents: Array<Record<string, unknown>> = [];
-
-    if (orgIds.length > 0) {
-      for (const orgId of orgIds) {
-        const events = await this.eventbriteClient.listOrganizationEvents(orgId, from.toISOString(), to.toISOString());
-        allRawEvents.push(...events);
-      }
-    } else {
-      this.logger.log('EVENTBRITE_ORGANIZATION_IDS is empty. Falling back to city-wide search.');
-      const events = await this.eventbriteClient.searchEventsByCity(city, from.toISOString(), to.toISOString());
-      allRawEvents.push(...events);
-    }
+    const allRawEvents = await this.eventbriteClient.searchEventsByCity(city);
 
     for (const raw of allRawEvents) {
         const normalized = this.normalizeEvent(raw);
         if (!normalized) continue;
 
-        if ((normalized.city ?? '').toLowerCase() !== city) {
+        const normalizedCity = (normalized.city ?? '').toLowerCase();
+        if (normalizedCity && normalizedCity !== city) {
           continue;
         }
 
@@ -112,7 +96,7 @@ export class EventbriteService {
     }
 
     const pruneQuery: Record<string, unknown> = {
-      $or: [{ startsAt: { $lt: dayjs().tz(timezoneName).startOf('day').toDate() } }, { status: { $ne: 'live' } }]
+      $or: [{ startsAt: { $lt: from } }, { startsAt: { $gt: to } }]
     };
 
     if (seenIds.size > 0) {
@@ -136,8 +120,12 @@ export class EventbriteService {
     return this.eventbriteEventModel
       .find({
         startsAt: { $gte: start, $lte: end },
-        city: { $regex: new RegExp(`^${city}$`, 'i') },
-        status: 'live'
+        $or: [
+          { city: { $regex: new RegExp(`^${city}$`, 'i') } },
+          { city: { $exists: false } },
+          { city: null },
+          { city: '' }
+        ]
       })
       .sort({ startsAt: 1 });
   }

@@ -31,6 +31,7 @@ Base prefix: `/api`
 
 ### Recommendations
 - `GET /matches/:matchId/suggestions`
+  - Uses static weekly Chicago dataset + catalog fallback
 
 ### Chat
 - `GET /matches/:matchId/messages?cursor=<ObjectId>`

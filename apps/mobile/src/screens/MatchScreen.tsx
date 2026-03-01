@@ -172,7 +172,15 @@ export function MatchScreen({ onProfilePress, onMessagesPress, onMatchProfilePre
                     <Text style={styles.suggestionMeta}>
                       {suggestion.startsAt
                         ? new Date(suggestion.startsAt).toLocaleString()
-                        : suggestion.priceLabel ?? 'This week'}
+                        : suggestion.detailLabel
+                          ? suggestion.detailLabel
+                        : suggestion.type === 'restaurant'
+                          ? suggestion.matchedTags.length > 0
+                            ? suggestion.matchedTags.join(', ')
+                            : 'Restaurant'
+                          : suggestion.type === 'event'
+                            ? 'Event'
+                            : 'This week'}
                     </Text>
                     <Text style={styles.suggestionMeta}>
                       {(suggestion.priceLabel ?? 'Varies') + ` · ${suggestion.source.toUpperCase()}`}

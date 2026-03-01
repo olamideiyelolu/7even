@@ -73,8 +73,9 @@ export interface SuggestionItemResponse {
   startsAt?: string;
   venueName?: string;
   locationLabel?: string;
+  detailLabel?: string;
   priceLabel?: string;
-  source: 'eventbrite' | 'catalog';
+  source: 'static' | 'catalog';
 }
 
 export interface SuggestionResponse {

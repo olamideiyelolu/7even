@@ -1,11 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { EventbriteService } from '../eventbrite/eventbrite.service';
 import { Match, MatchDocument } from '../matching/schemas/match.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import {
+  CHICAGO_WEEKLY_DATA,
+  WeeklyEvent,
+  WeeklyRestaurant
+} from './constants/chicago-weekly-data';
 import { Suggestion, SuggestionDocument } from './schemas/suggestion.schema';
 import { VenueEvent, VenueEventDocument } from './schemas/venue-event.schema';
+
+interface SuggestionCandidate {
+  venueEventId?: Types.ObjectId;
+  name: string;
+  type: 'restaurant' | 'event';
+  matchedTags: string[];
+  score: number;
+  eventUrl?: string;
+  startsAt?: Date;
+  venueName?: string;
+  locationLabel?: string;
+  detailLabel?: string;
+  priceLabel?: string;
+  source: 'static' | 'catalog';
+}
 
 @Injectable()
 export class RecommendationsService {
@@ -17,17 +36,16 @@ export class RecommendationsService {
     @InjectModel(Match.name)
     private readonly matchModel: Model<MatchDocument>,
     @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
-    private readonly eventbriteService: EventbriteService
+    private readonly userModel: Model<UserDocument>
   ) {}
 
   async generateForMatch(matchId: string, combinedInterests: string[]) {
     const interests = [...new Set(combinedInterests.map((value) => value.toLowerCase().trim()).filter(Boolean))];
-    const eventbriteRanked = await this.rankEventbriteEvents(interests);
+    const staticRanked = this.rankFromWeeklyStaticData(interests);
 
-    if (eventbriteRanked.length > 0) {
-      await this.persistSuggestions(matchId, eventbriteRanked);
-      return eventbriteRanked;
+    if (staticRanked.length > 0) {
+      await this.persistSuggestions(matchId, staticRanked);
+      return staticRanked;
     }
 
     const catalogRanked = await this.rankCatalogEvents(interests);
@@ -58,43 +76,85 @@ export class RecommendationsService {
     return this.suggestionModel.findOne({ matchId: new Types.ObjectId(match.id) });
   }
 
-  private async rankEventbriteEvents(combinedInterests: string[]) {
-    const events = await this.eventbriteService.listUpcomingThisWeek(new Date(), 'Chicago');
+  private rankFromWeeklyStaticData(combinedInterests: string[]) {
+    const weekStart = new Date(`${CHICAGO_WEEKLY_DATA.week_start}T00:00:00-06:00`);
+    const weekEnd = new Date(`${CHICAGO_WEEKLY_DATA.week_end}T23:59:59-06:00`);
 
-    const categoryWeights = this.buildCategoryWeights(combinedInterests);
-
-    const ranked = events
-      .map((event) => {
-        const matchedTags = (event.tags ?? []).filter((tag) => combinedInterests.includes(tag.toLowerCase()));
-        const categoryScore = this.categoryScore(event.categoryId, event.subcategoryId, categoryWeights);
-        const tagScore = matchedTags.length / Math.max(1, (event.tags ?? []).length);
-        const freeBias = event.isFree ? 0.2 : 0;
-        const lowCostBias = !event.isFree && (event.priceMin ?? Number.POSITIVE_INFINITY) <= 20 ? 0.1 : 0;
-        const startsAtMs = event.startsAt.getTime();
-        const now = Date.now();
-        const daysAway = Math.max(0, (startsAtMs - now) / (1000 * 60 * 60 * 24));
-        const proximityScore = Math.max(0, 1 - daysAway / 7);
-
-        const score = Number((tagScore * 0.35 + categoryScore * 0.35 + proximityScore * 0.2 + freeBias + lowCostBias).toFixed(4));
-
-        return {
-          venueEventId: event._id,
-          name: event.name,
-          type: 'event' as const,
-          matchedTags,
-          score,
-          eventUrl: event.url,
-          startsAt: event.startsAt,
-          venueName: event.venueName,
-          locationLabel: this.locationLabel(event),
-          priceLabel: this.priceLabel(event),
-          source: 'eventbrite' as const
-        };
+    const eventCandidates = CHICAGO_WEEKLY_DATA.events
+      .filter((event) => {
+        const start = new Date(event.start_time_local);
+        return !Number.isNaN(start.getTime()) && start >= weekStart && start <= weekEnd;
       })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+      .map((event) => this.toEventCandidate(event, combinedInterests));
 
-    return ranked;
+    const restaurantCandidates = CHICAGO_WEEKLY_DATA.restaurants.map((restaurant) =>
+      this.toRestaurantCandidate(restaurant, combinedInterests)
+    );
+
+    const selected: SuggestionCandidate[] = [];
+
+    const eventTarget = Math.min(2, eventCandidates.length, 5);
+    if (eventTarget > 0) {
+      selected.push(...this.pickWeightedRandom(eventCandidates, eventTarget));
+    }
+
+    const remaining = 5 - selected.length;
+    if (remaining > 0) {
+      selected.push(...this.pickWeightedRandom(restaurantCandidates, Math.min(remaining, restaurantCandidates.length)));
+    }
+
+    if (selected.length < 5) {
+      const leftovers = this.shuffleByWeight([...eventCandidates, ...restaurantCandidates], selected);
+      for (const item of leftovers) {
+        if (selected.length >= 5) break;
+        selected.push(item);
+      }
+    }
+
+    return selected;
+  }
+
+  private toEventCandidate(event: WeeklyEvent, interests: string[]): SuggestionCandidate {
+    const tags = [event.category.toLowerCase(), ...(event.venue ? [event.venue.toLowerCase()] : [])];
+    const matchedTags = tags.filter((tag) => this.matchesInterest(tag, interests));
+    const base = matchedTags.length > 0 ? 0.6 : 0.2;
+    const freeBoost = event.price === 'free' ? 0.2 : 0;
+    const score = Number((base + freeBoost + Math.random() * 0.2).toFixed(4));
+
+    return {
+      name: event.name,
+      type: 'event',
+      matchedTags,
+      score,
+      startsAt: new Date(event.start_time_local),
+      venueName: event.venue ?? undefined,
+      locationLabel: event.address ?? CHICAGO_WEEKLY_DATA.city,
+      priceLabel: event.price === 'free' ? 'Free' : event.price === 'paid' ? 'Paid' : 'Unknown',
+      source: 'static'
+    };
+  }
+
+  private toRestaurantCandidate(restaurant: WeeklyRestaurant, interests: string[]): SuggestionCandidate {
+    const cuisineTags = restaurant.cuisine.map((item) => item.toLowerCase());
+    const matchedTags = cuisineTags.filter((tag) => this.matchesInterest(tag, interests));
+    const rating = typeof restaurant.rating === 'number' ? Math.max(0, Math.min(5, restaurant.rating)) / 5 : 0.7;
+    const interestBoost = matchedTags.length > 0 ? 0.2 : 0;
+    const score = Number((rating * 0.6 + interestBoost + Math.random() * 0.2).toFixed(4));
+    const cuisineLabel = restaurant.cuisine.join(', ');
+    const ratingLabel = typeof restaurant.rating === 'number' ? `★ ${restaurant.rating.toFixed(1)}` : undefined;
+    const detailLabel = [cuisineLabel || undefined, ratingLabel].filter(Boolean).join(' · ');
+
+    return {
+      name: restaurant.name,
+      type: 'restaurant',
+      matchedTags,
+      score,
+      venueName: restaurant.name,
+      locationLabel: restaurant.address ?? CHICAGO_WEEKLY_DATA.city,
+      detailLabel: detailLabel || undefined,
+      priceLabel: this.restaurantPriceLabel(restaurant.price_level),
+      source: 'static'
+    };
   }
 
   private async rankCatalogEvents(combinedInterests: string[]) {
@@ -111,6 +171,7 @@ export class RecommendationsService {
           score: Number(score.toFixed(4)),
           venueName: item.name,
           locationLabel: item.neighborhood,
+          detailLabel: item.description ?? undefined,
           priceLabel: 'Varies',
           source: 'catalog' as const
         };
@@ -119,7 +180,7 @@ export class RecommendationsService {
       .slice(0, 5);
   }
 
-  private async persistSuggestions(matchId: string, items: Array<Record<string, unknown>>) {
+  private async persistSuggestions(matchId: string, items: SuggestionCandidate[]) {
     await this.suggestionModel.findOneAndUpdate(
       { matchId: new Types.ObjectId(matchId) },
       {
@@ -130,58 +191,60 @@ export class RecommendationsService {
     );
   }
 
-  private buildCategoryWeights(interests: string[]) {
-    const categoryMap: Record<string, string[]> = {
-      music: ['103'],
-      comedy: ['104', '3003'],
-      art: ['104'],
-      foodie: ['105', '5001'],
-      sports: ['108', '8001'],
-      outdoors: ['109', '9001'],
-      gaming: ['110', '11003'],
-      nightlife: ['103', '104', '110']
+  private pickWeightedRandom(items: SuggestionCandidate[], count: number) {
+    const pool = [...items];
+    const picked: SuggestionCandidate[] = [];
+
+    while (pool.length > 0 && picked.length < count) {
+      const totalWeight = pool.reduce((sum, item) => sum + Math.max(0.01, item.score), 0);
+      let cursor = Math.random() * totalWeight;
+      let index = 0;
+
+      for (let i = 0; i < pool.length; i += 1) {
+        cursor -= Math.max(0.01, pool[i].score);
+        if (cursor <= 0) {
+          index = i;
+          break;
+        }
+      }
+
+      picked.push(pool[index]);
+      pool.splice(index, 1);
+    }
+
+    return picked;
+  }
+
+  private shuffleByWeight(items: SuggestionCandidate[], selected: SuggestionCandidate[]) {
+    const selectedKeys = new Set(selected.map((item) => `${item.type}:${item.name}`));
+    const remaining = items.filter((item) => !selectedKeys.has(`${item.type}:${item.name}`));
+    return this.pickWeightedRandom(remaining, remaining.length);
+  }
+
+  private matchesInterest(tag: string, interests: string[]) {
+    const normalizedTag = tag.toLowerCase();
+
+    if (interests.includes(normalizedTag)) return true;
+
+    const aliases: Record<string, string[]> = {
+      foodie: ['food', 'american', 'italian', 'mexican', 'pizza', 'chinese', 'steakhouse'],
+      music: ['music', 'jazz'],
+      nightlife: ['nightlife', 'bar', 'cocktail', 'late'],
+      outdoors: ['outdoors', 'stroll', 'park', 'riverwalk'],
+      art: ['art', 'museum'],
+      sports: ['sports', 'bulls', 'blackhawks'],
+      comedy: ['comedy', 'stand-up'],
+      gaming: ['gaming']
     };
 
-    const weights = new Map<string, number>();
-    for (const interest of interests) {
-      for (const id of categoryMap[interest] ?? []) {
-        weights.set(id, (weights.get(id) ?? 0) + 1);
-      }
-    }
-
-    const maxWeight = Math.max(1, ...weights.values());
-    for (const [id, weight] of weights.entries()) {
-      weights.set(id, Number((weight / maxWeight).toFixed(4)));
-    }
-
-    return weights;
+    return interests.some((interest) => (aliases[interest] ?? []).some((alias) => normalizedTag.includes(alias)));
   }
 
-  private categoryScore(
-    categoryId: string | undefined,
-    subcategoryId: string | undefined,
-    weights: Map<string, number>
-  ) {
-    const categoryWeight = categoryId ? (weights.get(categoryId) ?? 0) : 0;
-    const subcategoryWeight = subcategoryId ? (weights.get(subcategoryId) ?? 0) : 0;
-    return Math.max(categoryWeight, subcategoryWeight);
-  }
-
-  private locationLabel(event: { city?: string; venueName?: string; address?: string }) {
-    if (event.city && event.venueName) return `${event.venueName} · ${event.city}`;
-    if (event.address) return event.address;
-    return event.city ?? 'Chicago';
-  }
-
-  private priceLabel(event: { isFree?: boolean; priceMin?: number; priceMax?: number; currency?: string }) {
-    if (event.isFree) return 'Free';
-    const currency = event.currency ?? 'USD';
-    const symbol = currency === 'USD' ? '$' : `${currency} `;
-    if (typeof event.priceMin === 'number' && typeof event.priceMax === 'number') {
-      if (event.priceMin === event.priceMax) return `${symbol}${event.priceMin.toFixed(0)}`;
-      return `${symbol}${event.priceMin.toFixed(0)}-${symbol}${event.priceMax.toFixed(0)}`;
-    }
-    if (typeof event.priceMin === 'number') return `${symbol}${event.priceMin.toFixed(0)}+`;
-    return 'Varies';
+  private restaurantPriceLabel(level: WeeklyRestaurant['price_level']) {
+    if (!level) return 'Varies';
+    if (level === 'cheap') return '$';
+    if (level === 'moderate') return '$$';
+    if (level === 'expensive') return '$$$';
+    return '$$$$';
   }
 }

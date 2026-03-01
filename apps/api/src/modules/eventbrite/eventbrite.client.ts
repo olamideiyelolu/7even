@@ -20,37 +20,7 @@ export class EventbriteClient {
     return this.config.get<string>('EVENTBRITE_ENABLED', 'false') === 'true';
   }
 
-  async listOrganizationEvents(orgId: string, fromIso: string, toIso: string) {
-    const token = this.config.get<string>('EVENTBRITE_TOKEN', '');
-    if (!this.isEnabled() || !token) return [];
-
-    const all: Array<Record<string, unknown>> = [];
-    let continuation: string | undefined;
-
-    do {
-      const query = new URLSearchParams({
-        status: 'live',
-        'start_date.range_start': fromIso,
-        'start_date.range_end': toIso,
-        order_by: 'start_asc',
-        expand: 'venue,category,subcategory,ticket_availability',
-        page_size: '50'
-      });
-
-      if (continuation) {
-        query.set('continuation', continuation);
-      }
-
-      const url = `${this.baseUrl}/organizations/${orgId}/events/?${query.toString()}`;
-      const payload = await this.requestWithRetry(url, token);
-      all.push(...(payload.events ?? []));
-      continuation = payload.pagination?.has_more_items ? payload.pagination?.continuation : undefined;
-    } while (continuation);
-
-    return all;
-  }
-
-  async searchEventsByCity(city: string, fromIso: string, toIso: string) {
+  async searchEventsByCity(city: string) {
     const token = this.config.get<string>('EVENTBRITE_TOKEN', '');
     if (!this.isEnabled() || !token) return [];
 
@@ -60,11 +30,7 @@ export class EventbriteClient {
     do {
       const query = new URLSearchParams({
         'location.address': city,
-        'location.within': '25mi',
-        status: 'live',
-        'start_date.range_start': fromIso,
-        'start_date.range_end': toIso,
-        order_by: 'start_asc',
+        sort_by: 'date',
         expand: 'venue,category,subcategory,ticket_availability',
         page_size: '50'
       });

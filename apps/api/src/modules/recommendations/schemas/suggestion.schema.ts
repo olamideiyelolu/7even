@@ -27,10 +27,13 @@ class SuggestionItem {
   locationLabel?: string;
 
   @Prop()
+  detailLabel?: string;
+
+  @Prop()
   priceLabel?: string;
 
-  @Prop({ required: true, enum: ['eventbrite', 'catalog'], default: 'catalog' })
-  source!: 'eventbrite' | 'catalog';
+  @Prop({ required: true, enum: ['static', 'catalog'], default: 'catalog' })
+  source!: 'static' | 'catalog';
 
   @Prop({ type: [String], default: [] })
   matchedTags!: string[];

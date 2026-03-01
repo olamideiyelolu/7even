@@ -14,10 +14,19 @@ export async function apiRequest<T>(
     }
   });
 
+  const rawBody = await res.text();
+
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    throw new Error(rawBody || `Request failed: ${res.status}`);
   }
 
-  return res.json() as Promise<T>;
+  if (res.status === 204 || res.status === 205 || rawBody.trim().length === 0) {
+    return null as T;
+  }
+
+  try {
+    return JSON.parse(rawBody) as T;
+  } catch {
+    throw new Error('Request succeeded but response body was not valid JSON.');
+  }
 }
